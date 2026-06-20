@@ -76,6 +76,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const selectVoiceModel = document.getElementById("setting-voice-model");
     const btnPreviewVoice = document.getElementById("btn-preview-voice");
     const settingCpuThreads = document.getElementById("setting-cpu-threads");
+    const settingRenderChunkSize = document.getElementById("setting-render-chunk-size");
     const settingVieneuVersion = document.getElementById("setting-vieneu-version");
     const settingVieneuBatch = document.getElementById("setting-vieneu-batch");
     const settingVieneuOnnxDir = document.getElementById("setting-vieneu-onnx-dir");
@@ -442,6 +443,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (settingAsrLocalPath) settingAsrLocalPath.value = data.asr_local_model_path || "";
             if (settingXhsApiUrl) settingXhsApiUrl.value = data.xhs_downloader_api_url || "";
             if (settingWebgpuEnabled) settingWebgpuEnabled.checked = data.webgpu_enabled !== false;
+            if (settingRenderChunkSize) settingRenderChunkSize.value = data.render_chunk_size || 50;
             
             // Load Job and Cache configs
             const settingWipeCache = document.getElementById("setting-wipe-cache");
@@ -520,7 +522,8 @@ document.addEventListener("DOMContentLoaded", () => {
             webgpu_tts_enabled: false,
             wipe_cache_after_generation: settingWipeCache ? settingWipeCache.checked : false,
             max_job_threads: settingMaxJobThreads ? (parseInt(settingMaxJobThreads.value, 10) || 2) : 2,
-            max_batch: 1
+            max_batch: 1,
+            render_chunk_size: settingRenderChunkSize ? (parseInt(settingRenderChunkSize.value, 10) || 50) : 50
         };
         try {
             const res = await api.saveConfig(config);
@@ -1487,6 +1490,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 mute_video: muteVideo,
                 video_order_mode: videoOrderMode,
                 vieneu_batch_paragraphs: settingVieneuBatch ? Math.min(Math.max(parseInt(settingVieneuBatch.value, 10) || 1, 1), 20) : 1,
+                render_chunk_size: settingRenderChunkSize ? (parseInt(settingRenderChunkSize.value, 10) || 50) : 50,
                 asr_provider: settingAsrProvider ? settingAsrProvider.value : "remote_openai",
                 subtitle_timing_source: settingSubtitleTimingSource ? settingSubtitleTimingSource.value : "asr",
                 subtitle_fallback_to_estimated: true,
@@ -2383,6 +2387,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (settings.mute_video !== undefined) settingMuteVideo.checked = settings.mute_video;
         if (settings.video_order_mode) selectVideoOrder.value = settings.video_order_mode;
         if (settings.vieneu_batch_paragraphs) settingVieneuBatch.value = settings.vieneu_batch_paragraphs;
+        if (settings.render_chunk_size && settingRenderChunkSize) settingRenderChunkSize.value = settings.render_chunk_size;
         
         if (settings.bg_music_volume !== undefined) {
             sliderVolume.value = settings.bg_music_volume;
@@ -2472,6 +2477,7 @@ document.addEventListener("DOMContentLoaded", () => {
             mute_video: settingMuteVideo.checked,
             video_order_mode: selectVideoOrder.value,
             vieneu_batch_paragraphs: parseInt(settingVieneuBatch.value, 10) || 1,
+            render_chunk_size: settingRenderChunkSize ? (parseInt(settingRenderChunkSize.value, 10) || 50) : 50,
             intro_template: document.getElementById("setting-intro") ? document.getElementById("setting-intro").value : null,
             outro_template: document.getElementById("setting-outro") ? document.getElementById("setting-outro").value : null,
             watermark_path: document.getElementById("setting-watermark") ? document.getElementById("setting-watermark").value : null,

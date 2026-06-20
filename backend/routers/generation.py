@@ -41,6 +41,7 @@ class GenerateRequest(BaseModel):
     subtitle_timing_source: str | None = None
     subtitle_fallback_to_estimated: bool | None = None
     review_subtitles: bool = False
+    render_chunk_size: int = 50
     
     subtitle_font: str = "Arial"
     subtitle_font_size: int = 48
@@ -301,6 +302,7 @@ def run_generation_pipeline(job_id: str, cancel_event: threading.Event, req: Gen
             style=sub_style,
             mute_video=req.mute_video,
             video_order_mode=req.video_order_mode,
+            chunk_size=req.render_chunk_size,
             log_callback=add_log
         )
         
@@ -393,6 +395,7 @@ def resume_generation_pipeline(job_id: str, cancel_event: threading.Event, edite
             style=sub_style,
             mute_video=req.mute_video,
             video_order_mode=req.video_order_mode,
+            chunk_size=req.render_chunk_size,
             log_callback=add_log
         )
         

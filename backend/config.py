@@ -103,6 +103,7 @@ DEFAULT_CONFIG = {
     "max_job_threads": 0,
     "wipe_cache_after_generation": False,
     "max_batch": 1,
+    "render_chunk_size": 50,
     "presets": {
         "Shorts Vietnamese VieNeu": {
             "aspect_ratio": "9:16",

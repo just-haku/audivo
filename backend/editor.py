@@ -646,7 +646,8 @@ def render_video_chunk(
             )
             
         cores = os.cpu_count() or 4
-        max_workers = min(cores, 6)
+        # Limit parallel FFmpeg jobs to 2 to prevent CPU thrashing/overheating and RAM exhaustion
+        max_workers = min(cores, 2)
         from concurrent.futures import ThreadPoolExecutor
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             list(executor.map(process_worker, range(len(groups))))
@@ -780,6 +781,7 @@ def compose_final_video(
     style: dict,
     mute_video: bool = True,
     video_order_mode: str = "ordered",
+    chunk_size: int = 50,
     log_callback=None
 ) -> str:
     """
@@ -891,7 +893,7 @@ def compose_final_video(
     if bg_music_info:
         bg_music_payload = {"info": bg_music_info, "total_duration": total_bgm_duration}
                      
-    chunk_size = 50
+    chunk_size = int(chunk_size) if chunk_size and chunk_size > 0 else 50
     chunk_files = []
     num_segments = len(segments)
     
