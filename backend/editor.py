@@ -155,17 +155,72 @@ def write_ass_cues(cues: list[dict], output_path: str, style: dict):
             )
 
 
-def build_estimated_subtitle_cues(segments: list[dict]) -> list[dict]:
+def split_estimated_sentence(sentence: str, max_chars: int = 42) -> list[str]:
+    conjunctions = {
+        "and", "but", "or", "so", "because", "although", "while", "however",
+        "và", "nhưng", "hoặc", "nên", "vì", "bởi", "khi", "nếu", "rồi",
+    }
+    terminal_re = re.compile(r"[,;:，；：\-–—\"'\.!?。！？]$")
+    
+    words = sentence.split()
+    if not words:
+        return []
+        
+    chunks = []
+    current_words = []
+    
+    for i, word in enumerate(words):
+        current_words.append(word)
+        current_text = " ".join(current_words)
+        
+        if i == len(words) - 1:
+            break
+            
+        next_word = words[i + 1]
+        next_text = current_text + " " + next_word
+        
+        if len(next_text) > max_chars:
+            chunks.append(current_text)
+            current_words = []
+            continue
+            
+        if len(current_text) >= 12:
+            if terminal_re.search(word):
+                chunks.append(current_text)
+                current_words = []
+                continue
+                
+            clean_next = next_word.lower().strip(",.;:!?\"'-–—")
+            if clean_next in conjunctions:
+                chunks.append(current_text)
+                current_words = []
+                continue
+                
+    if current_words:
+        chunks.append(" ".join(current_words))
+        
+    return chunks
+
+
+def build_estimated_subtitle_cues(segments: list[dict], style: dict = None) -> list[dict]:
+    max_chars = 42
+    if style:
+        max_chars = int(style.get("max_chars", 42) or 42)
+        
     cues = []
     current_time = 0.0
     for seg in segments:
         duration = float(seg["duration"])
         clean_text = _clean_subtitle_text(seg["text"])
-        sentences = [s.strip() for s in split_text_into_sentences(clean_text) if s.strip()]
-        if not sentences:
+        raw_sentences = [s.strip() for s in split_text_into_sentences(clean_text) if s.strip()]
+        if not raw_sentences:
             cues.append({"start": current_time, "end": current_time + duration, "text": " "})
             current_time += duration
             continue
+
+        sentences = []
+        for s in raw_sentences:
+            sentences.extend(split_estimated_sentence(s, max_chars=max_chars))
 
         total_chars = sum(len(s) for s in sentences) or 1
         for sentence in sentences:
@@ -238,7 +293,7 @@ def generate_ass_file(segments: list[dict], output_path: str, style: dict):
     Generates an ASS subtitle file from list of TTS segments using estimated timing.
     Prefer ``generate_ass_from_asr`` when ASR timestamps are available.
     """
-    write_ass_cues(build_estimated_subtitle_cues(segments), output_path, style)
+    write_ass_cues(build_estimated_subtitle_cues(segments, style), output_path, style)
 
 
 def generate_ass_from_asr(asr_segments: list[dict], output_path: str, style: dict):
