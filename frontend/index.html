@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Video Generator - MoneyPrinterTurbo Clone</title>
+    <!-- Google Fonts: Outfit and Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/frontend/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header & Language Switcher -->
+        <header class="app-header">
+            <div class="header-utility">
+                <select id="lang-selector" class="lang-select">
+                    <option value="en-US">EN</option>
+                    <option value="vi-VN">VI</option>
+                </select>
+            </div>
+            <div class="logo-area">
+                <span class="logo-icon" id="logo-svg"></span>
+                <h1>TurboVideo</h1>
+                <span class="badge">v1.3.0 VIP</span>
+            </div>
+            <p class="subtitle" id="hdr-subtitle">Generate shorts and videos from scripts automatically using Google Cloud TTS, VieNeu-TTS & FFmpeg</p>
+        </header>
+
+        <!-- Main Workspace -->
+        <main class="app-workspace">
+            <!-- Left Panel: Configuration -->
+            <section class="config-panel">
+                
+                <!-- Global Configuration Actions -->
+                <div class="card card-actions">
+                    <div class="card-body" style="padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                        <button type="button" id="btn-save-keys" class="btn btn-primary" style="width: 100%; font-weight: 600;">Save Configuration</button>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                            <button type="button" id="btn-export-config" class="btn btn-secondary btn-sm">Export</button>
+                            <button type="button" id="btn-import-config-trigger" class="btn btn-secondary btn-sm">Import</button>
+                        </div>
+                        <input type="file" id="import-config-input" accept=".json" style="display: none;">
+                        <button type="button" id="btn-run-wizard" class="btn btn-secondary btn-sm" style="width: 100%;">Run Setup Check</button>
+                    </div>
+                </div>
+
+                <!-- Step 1: Script Input -->
+                <div class="card card-script" id="card-script-el">
+                    <div class="card-header">
+                        <span class="step-num">1</span>
+                        <h2 id="lbl-script-title">Input Video Script</h2>
+                    </div>
+                    <div class="card-body">
+                        <!-- AI Script Generator helper -->
+                        <div class="ai-script-generator">
+                            <h3 id="lbl-ai-writer">AI Script Writer</h3>
+                            <div class="ai-script-inputs-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.5rem;">
+                                <div class="setting-item">
+                                    <label for="ai-provider" style="font-size: 0.75rem; font-weight: 500; color: var(--text-muted); margin-bottom: 0.2rem;">Provider</label>
+                                    <select id="ai-provider" style="padding: 0.45rem 0.6rem; font-size: 0.8rem;">
+                                        <option value="gemini">Gemini</option>
+                                        <option value="groq">Groq</option>
+                                        <option value="deepseek">DeepSeek</option>
+                                        <option value="xai">xAI</option>
+                                        <option value="ollama">Ollama (Local)</option>
+                                    </select>
+                                </div>
+                                <div class="setting-item">
+                                    <label for="ai-model" style="font-size: 0.75rem; font-weight: 500; color: var(--text-muted); margin-bottom: 0.2rem;">Model Name</label>
+                                    <input type="text" id="ai-model" placeholder="Default model..." style="padding: 0.45rem 0.6rem; font-size: 0.8rem;">
+                                </div>
+                            </div>
+                            <div class="ai-script-inputs">
+                                <input type="text" id="ai-topic" placeholder="Enter topic/keyword (e.g. History of Rome)...">
+                                <button type="button" id="btn-ai-script" class="btn btn-primary">Write Script</button>
+                            </div>
+                        </div>
+
+                        <hr class="divider">
+
+                        <div class="input-group">
+                            <label for="script-text" id="lbl-script-label">Paste script or XML blocks below:</label>
+                            <textarea id="script-text" placeholder="Paste or write your script here..."></textarea>
+                        </div>
+                        
+                        <!-- VIP VieNeu tag helper -->
+                        <div class="vieneu-vip-panel hidden" id="vieneu-vip-panel">
+                            <div class="vip-badge">VieNeu-TTS VIP Panel</div>
+                            <p class="vip-help" id="lbl-vip-help">Click to insert expressive cues directly into text:</p>
+                            <div class="vip-buttons">
+                                <button type="button" class="btn btn-secondary btn-xs btn-vip-tag" data-tag="[cười]">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-smile"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/></svg>
+                                    <span>[cười]</span>
+                                </button>
+                                <button type="button" class="btn btn-secondary btn-xs btn-vip-tag" data-tag="[thở dài]">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wind"><path d="M9.59 4.59A2 2 0 1 1 11 8H2"/><path d="M12.59 19.41A2 2 0 1 0 14 16H2"/><path d="M15.73 9.73A2.5 2.5 0 1 1 18 14H2"/></svg>
+                                    <span>[thở dài]</span>
+                                </button>
+                                <button type="button" class="btn btn-secondary btn-xs btn-vip-tag" data-tag="[hắng giọng]">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-volume-2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+                                    <span>[hắng giọng]</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="script-helpers">
+                            <button type="button" id="btn-load-sample" class="btn btn-secondary btn-sm">Load Sample Script</button>
+                            <button type="button" id="btn-convert-xml" class="btn btn-primary btn-sm">Plain Text to XML</button>
+                            <button type="button" id="btn-confirm-script" class="btn btn-success btn-sm">Confirm Script</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Materials Pool -->
+                <div class="card card-materials">
+                    <div class="card-header">
+                        <span class="step-num">2</span>
+                        <h2 id="lbl-materials-title">Media Materials</h2>
+                    </div>
+                    <div class="card-body">
+                        <!-- Downloader / Stock Searcher -->
+                        <div class="downloader-section">
+                            <h3 id="lbl-stock-title">Download URL or Search Stock Keyword</h3>
+                            <div class="download-inputs">
+                                <input type="text" id="download-url" placeholder="Paste URL or type search keyword (e.g. ocean)...">
+                                <select id="download-type">
+                                    <option value="video">Video Footage</option>
+                                    <option value="music">Background Music</option>
+                                    <option value="subtitle">Subtitle Only</option>
+                                </select>
+                                <button type="button" id="btn-download" class="btn btn-primary">Fetch / Find</button>
+                            </div>
+                        </div>
+
+                        <hr class="divider">
+
+                        <!-- Local Upload -->
+                        <div class="upload-section">
+                            <h3 id="lbl-upload-title">Upload Local Files</h3>
+                            <div class="upload-grid" style="grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.5rem;">
+                                <div class="upload-box" id="upload-video-box">
+                                    <span class="upload-icon" id="icon-upload-video"></span>
+                                    <p id="lbl-upload-vid">Upload Video Clips</p>
+                                    <input type="file" id="upload-video-input" accept="video/mp4,video/mkv,video/avi" multiple hidden>
+                                </div>
+                                <div class="upload-box" id="upload-music-box">
+                                    <span class="upload-icon" id="icon-upload-music"></span>
+                                    <p id="lbl-upload-aud">Upload Background Music</p>
+                                    <input type="file" id="upload-music-input" accept="audio/mp3,audio/wav,audio/m4a" hidden>
+                                </div>
+                                <div class="upload-box" id="upload-font-box">
+                                    <span class="upload-icon" id="icon-upload-font"></span>
+                                    <p id="lbl-upload-font">Upload Custom Font (.ttf/.otf)</p>
+                                    <input type="file" id="upload-font-input" accept=".ttf,.otf" hidden>
+                                </div>
+                                <div class="upload-box" id="upload-intro-box">
+                                    <span class="upload-icon" id="icon-upload-intro"></span>
+                                    <p>Upload Intro Video</p>
+                                    <input type="file" id="upload-intro-input" accept="video/mp4,video/mov,video/avi" hidden>
+                                </div>
+                                <div class="upload-box" id="upload-outro-box">
+                                    <span class="upload-icon" id="icon-upload-outro"></span>
+                                    <p>Upload Outro Video</p>
+                                    <input type="file" id="upload-outro-input" accept="video/mp4,video/mov,video/avi" hidden>
+                                </div>
+                                <div class="upload-box" id="upload-watermark-box">
+                                    <span class="upload-icon" id="icon-upload-watermark"></span>
+                                    <p>Upload Logo/Watermark</p>
+                                    <input type="file" id="upload-watermark-input" accept="image/png,image/jpeg,image/jpg" hidden>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="divider">
+
+                        <!-- Materials List -->
+                        <div class="materials-list-section">
+                            <h3 id="lbl-select-title">Select Assets to Compile</h3>
+                            <div class="download-inputs" style="margin-bottom: 0.75rem;">
+                                <input type="text" id="video-category-input" placeholder="Category for selected videos...">
+                                <select id="video-category-filter">
+                                    <option value="">All categories</option>
+                                </select>
+                                <button type="button" id="btn-apply-category" class="btn btn-secondary btn-sm">Set Category</button>
+                                <button type="button" id="btn-select-category" class="btn btn-secondary btn-sm">Select Category</button>
+                            </div>
+                            <div class="materials-columns">
+                                <div class="materials-col">
+                                    <h4 id="lbl-vid-pool" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                                        <input type="checkbox" id="toggle-select-all-videos" style="width: auto; margin: 0;">
+                                        <span>Video Pool (<span id="count-videos">0</span>)</span>
+                                    </h4>
+                                    <div class="list-wrapper" id="list-videos">
+                                        <p class="placeholder-text">No videos available.</p>
+                                    </div>
+                                </div>
+                                <div class="materials-col">
+                                    <h4 id="lbl-bg-music">Background Music</h4>
+                                    <div class="list-wrapper" id="list-music">
+                                        <p class="placeholder-text">No music available.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 3: Production Settings -->
+                <div class="card card-settings">
+                    <div class="card-header">
+                        <span class="step-num">3</span>
+                        <h2 id="lbl-settings-title">Production & Style Settings</h2>
+                    </div>
+                    <div class="card-body settings-grid">
+                        <div class="setting-item">
+                            <label for="setting-voice-lang" id="lbl-voice-lang">Voice Language</label>
+                            <select id="setting-voice-lang">
+                                <!-- Dynamic languages loaded here -->
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label for="setting-voice-model" id="lbl-voice-model">Voice Model</label>
+                            <div style="display: flex; gap: 0.5rem; align-items: center; width: 100%;">
+                                <select id="setting-voice-model" style="flex: 1;">
+                                    <!-- Dynamic voice models loaded here based on language -->
+                                </select>
+                                <button type="button" id="btn-preview-voice" class="btn btn-secondary btn-sm" style="flex-shrink: 0; padding: 0.45rem 0.75rem;">Preview</button>
+                            </div>
+                        </div>
+                        <div class="setting-item">
+                            <label for="setting-aspect" id="lbl-aspect">Aspect Ratio</label>
+                            <select id="setting-aspect">
+                                <option value="9:16">Vertical (9:16 - TikTok/Shorts)</option>
+                                <option value="16:9">Landscape (16:9 - YouTube)</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label for="setting-speed" id="lbl-speed">Video Speed Multiplier</label>
+                            <input type="number" id="setting-speed" value="1.0" min="0.5" max="3.0" step="0.1">
+                        </div>
+                        <div class="setting-item">
+                            <label for="setting-video-order">Video Clip Order</label>
+                            <select id="setting-video-order">
+                                <option value="ordered">In selected order</option>
+                                <option value="random">Random clips and offsets</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label for="setting-volume" id="lbl-volume">Background Music Volume</label>
+                            <div class="slider-container">
+                                <input type="range" id="setting-volume" min="0.0" max="1.0" step="0.05" value="0.2">
+                                <span id="volume-val">20%</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Toggle Video Audio -->
+                        <div class="setting-item checkbox-item" style="grid-column: span 2; display: flex; flex-direction: row; align-items: center; gap: 0.5rem; margin: 0.5rem 0;">
+                            <input type="checkbox" id="setting-mute-video" checked style="width: auto;">
+                            <label for="setting-mute-video" id="lbl-mute-video" style="cursor: pointer;">Mute input video audio tracks (Default)</label>
+                        </div>
+                        
+                        <!-- Toggle Subtitle Review -->
+                        <div class="setting-item checkbox-item" style="grid-column: span 2; display: flex; flex-direction: row; align-items: center; gap: 0.5rem; margin: 0.5rem 0 0.25rem 0;">
+                            <input type="checkbox" id="setting-review-subtitles" style="width: auto;">
+                            <label for="setting-review-subtitles" style="cursor: pointer;">Review and edit subtitles before rendering final video</label>
+                        </div>
+                        
+                        <!-- Subtitle Timing Source -->
+                        <div class="setting-item" style="grid-column: span 2; margin: 0.25rem 0 0.5rem 0; display: flex; flex-direction: column; gap: 0.35rem;">
+                            <label for="setting-subtitle-timing-source" style="font-weight: 500; font-size: 0.85rem; color: var(--text-color);">Subtitle Timing Source</label>
+                            <select id="setting-subtitle-timing-source" style="padding: 0.45rem 0.6rem; font-size: 0.8rem; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-dark); color: var(--text-color); width: 100%;">
+                                <option value="asr">ASR (Automatic Speech Recognition - Whisper)</option>
+                                <option value="estimated">Estimated Timing (Math-based, Instant, OOM-safe, No API limits)</option>
+                            </select>
+                        </div>
+
+                        <!-- Subtitle Customization Section -->
+                        <div class="subtitles-style-section" style="grid-column: span 2; border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 0.5rem;">
+                            <h3 id="lbl-sub-style-title" style="font-size: 0.95rem; color: var(--text-muted); margin-bottom: 1rem;">Subtitle Appearance</h3>
+                            <div class="settings-grid">
+                                <div class="setting-item">
+                                    <label for="setting-sub-font" id="lbl-sub-font">Font Family</label>
+                                    <select id="setting-sub-font">
+                                        <option value="Arial">Arial</option>
+                                        <option value="Georgia">Georgia</option>
+                                        <option value="Courier New">Courier New</option>
+                                        <option value="Times New Roman">Times New Roman</option>
+                                        <option value="Trebuchet MS">Trebuchet MS</option>
+                                        <option value="Verdana">Verdana</option>
+                                    </select>
+                                </div>
+                                <div class="setting-item">
+                                    <label for="setting-sub-size" id="lbl-sub-size">Font Size</label>
+                                    <input type="number" id="setting-sub-size" value="48" min="16" max="96" step="2">
+                                </div>
+                                <div class="setting-item">
+                                    <label for="setting-sub-color" id="lbl-sub-color">Primary Color</label>
+                                    <div class="color-picker-container">
+                                        <input type="color" id="setting-sub-color" value="#FFFFFF">
+                                        <span id="sub-color-val">#FFFFFF</span>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <label for="setting-sub-outline-color" id="lbl-sub-outline-color">Outline Color</label>
+                                    <div class="color-picker-container">
+                                        <input type="color" id="setting-sub-outline-color" value="#000000">
+                                        <span id="sub-outline-color-val">#000000</span>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <label for="setting-sub-outline-width" id="lbl-sub-outline-width">Outline Width</label>
+                                    <input type="number" id="setting-sub-outline-width" value="3" min="0" max="10" step="1">
+                                </div>
+                                <div class="setting-item">
+                                    <label for="setting-sub-shadow-color" id="lbl-sub-shadow-color">Shadow Color</label>
+                                    <div class="color-picker-container">
+                                        <input type="color" id="setting-sub-shadow-color" value="#000000">
+                                        <span id="sub-shadow-color-val">#000000</span>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <label for="setting-sub-shadow-depth" id="lbl-sub-shadow-depth">Shadow Depth</label>
+                                    <input type="number" id="setting-sub-shadow-depth" value="0" min="0" max="10" step="1">
+                                </div>
+                                <div class="setting-item">
+                                    <label for="setting-sub-margin-v" id="lbl-sub-margin-v">Vertical Margin (MarginV)</label>
+                                    <input type="number" id="setting-sub-margin-v" value="180" min="10" max="500" step="10">
+                                </div>
+                                <div class="setting-item" style="flex-direction: row; align-items: center; gap: 1rem; margin-top: 1rem;">
+                                    <div style="display: flex; align-items: center; gap: 0.25rem;">
+                                        <input type="checkbox" id="setting-sub-bold" checked style="width: auto;">
+                                        <label for="setting-sub-bold" id="lbl-sub-bold" style="cursor: pointer;">Bold</label>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 0.25rem;">
+                                        <input type="checkbox" id="setting-sub-italic" style="width: auto;">
+                                        <label for="setting-sub-italic" id="lbl-sub-italic" style="cursor: pointer;">Italic</label>
+                                    </div>
+                                </div>
+                                <!-- Live Subtitle Preview -->
+                                <div class="setting-item" style="grid-column: span 2; margin-top: 1rem;">
+                                    <label id="lbl-sub-preview">Live Subtitle Preview</label>
+                                    <div id="sub-preview-box" style="background: radial-gradient(circle, #222538 0%, #0d0f1a 100%); border: 1px solid var(--border-color); border-radius: 8px; height: 110px; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; box-shadow: inset 0 0 10px rgba(0,0,0,0.5);">
+                                        <span id="sub-preview-text" style="text-align: center; line-height: 1.2; text-shadow: none; font-size: 24px; padding: 0.5rem;">Subtitle Preview text</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Intro / Outro & Watermarking Section -->
+                        <div class="post-processing-section" style="grid-column: span 2; border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 0.5rem;">
+                            <h3 style="font-size: 0.95rem; color: var(--text-muted); margin-bottom: 1rem;">Video Intro, Outro & Watermark</h3>
+                            <div class="settings-grid">
+                                <div class="setting-item">
+                                    <label for="setting-intro">Intro Video</label>
+                                    <select id="setting-intro">
+                                        <option value="">-- No Intro --</option>
+                                    </select>
+                                </div>
+                                <div class="setting-item">
+                                    <label for="setting-outro">Outro Video</label>
+                                    <select id="setting-outro">
+                                        <option value="">-- No Outro --</option>
+                                    </select>
+                                </div>
+                                <div class="setting-item">
+                                    <label for="setting-watermark">Watermark / Logo</label>
+                                    <select id="setting-watermark">
+                                        <option value="">-- No Watermark --</option>
+                                    </select>
+                                </div>
+                                <div class="setting-item">
+                                    <label for="setting-watermark-position">Watermark Position</label>
+                                    <select id="setting-watermark-position">
+                                        <option value="bottom-right">Bottom Right</option>
+                                        <option value="bottom-left">Bottom Left</option>
+                                        <option value="top-right">Top Right</option>
+                                        <option value="top-left">Top Left</option>
+                                    </select>
+                                </div>
+                                <div class="setting-item" style="grid-column: span 2;">
+                                    <label for="setting-watermark-opacity">Watermark Opacity</label>
+                                    <div class="slider-container">
+                                        <input type="range" id="setting-watermark-opacity" min="0.0" max="1.0" step="0.05" value="0.7">
+                                        <span id="watermark-opacity-val">70%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Save Production Settings Button -->
+                        <div class="setting-item" style="grid-column: span 2; margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+                            <button type="button" id="btn-save-production-settings" class="btn btn-primary" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                                <span id="icon-save-settings"></span>
+                                <span id="lbl-save-settings">Save Production Settings</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Panel: Production, Logs and Preview -->
+            <section class="output-panel">
+                <!-- Compiler Card -->
+                <div class="card card-compile">
+                    <div class="card-body">
+                        <button type="button" id="btn-generate" class="btn btn-generate-gradient">
+                            <span class="btn-icon" id="icon-compile"></span>
+                            <span id="lbl-btn-compile">Compile AI Video</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Logs Card -->
+                <div class="card card-logs">
+                    <div class="card-header">
+                        <h2 id="lbl-logs-title">Processing Logs</h2>
+                        <div style="display: flex; gap: 0.4rem;">
+                            <button type="button" id="btn-cancel-generation" class="btn btn-danger btn-xs hidden">Cancel Job</button>
+                            <button type="button" id="btn-retry-generation" class="btn btn-primary btn-xs hidden">Retry Job</button>
+                            <button type="button" id="btn-clear-logs" class="btn btn-secondary btn-xs">Clear</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="generation-progress-wrapper" style="margin-bottom: 15px;">
+                            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 5px;">
+                                <span id="lbl-generation-status" style="color: var(--text-muted); font-weight: 500;">Status: Idle</span>
+                                <span id="lbl-generation-percent" style="font-weight: 600; color: var(--color-accent);">0%</span>
+                            </div>
+                            <div class="progress-bar-container" style="height: 8px;">
+                                <div class="progress-bar" id="generation-progress-bar" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                        <div class="terminal-window" id="logs-terminal">
+                            <div class="log-line system">Ready to process. Waiting for configuration...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Preview Card -->
+                <div class="card card-preview">
+                    <div class="card-header">
+                        <h2 id="lbl-preview-title">Final Output Preview</h2>
+                    </div>
+                    <div class="card-body preview-body">
+                        <div class="video-container" id="video-preview-container">
+                            <div class="video-placeholder">
+                                <span class="placeholder-icon" id="icon-video-placeholder"></span>
+                                <p id="lbl-preview-placeholder">Your finished video will appear here after compilation completes.</p>
+                            </div>
+                        </div>
+                        <div class="preview-actions">
+                            <a href="#" id="btn-download-video" class="btn btn-success btn-block disabled" download>
+                                <span id="icon-download-video"></span>
+                                <span id="lbl-btn-download-video">Download Final Video</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- ================= FLOATING/SIDEBAR PANELS ================= -->
+    
+    <!-- API Keys Panel -->
+    <div class="side-panel card-keys" id="panel-keys">
+        <div class="card-body" id="body-keys">
+            <div class="settings-grid" style="grid-template-columns: 1fr; gap: 0.75rem;">
+                <div class="setting-item">
+                    <label for="key-pexels" id="lbl-key-pexels">Pexels API Keys (one per line)</label>
+                    <textarea id="key-pexels" rows="2" style="height: 60px; font-family: monospace; resize: vertical;" placeholder="Paste Pexels API Keys..."></textarea>
+                </div>
+                <div class="setting-item">
+                    <label for="key-pixabay" id="lbl-key-pixabay">Pixabay API Keys (one per line)</label>
+                    <textarea id="key-pixabay" rows="2" style="height: 60px; font-family: monospace; resize: vertical;" placeholder="Paste Pixabay API Keys..."></textarea>
+                </div>
+                <div class="setting-item">
+                    <label for="key-gemini" id="lbl-key-gemini">Gemini API Keys (one per line)</label>
+                    <textarea id="key-gemini" rows="2" style="height: 60px; font-family: monospace; resize: vertical;" placeholder="Paste Gemini API Keys..."></textarea>
+                </div>
+                <div class="setting-item">
+                    <label for="key-groq" id="lbl-key-groq">Groq API Keys (one per line)</label>
+                    <textarea id="key-groq" rows="2" style="height: 60px; font-family: monospace; resize: vertical;" placeholder="Paste Groq API Keys..."></textarea>
+                </div>
+                <div class="setting-item">
+                    <label for="key-deepseek" id="lbl-key-deepseek">DeepSeek API Keys (one per line)</label>
+                    <textarea id="key-deepseek" rows="2" style="height: 60px; font-family: monospace; resize: vertical;" placeholder="Paste DeepSeek API Keys..."></textarea>
+                </div>
+                <div class="setting-item">
+                    <label for="key-xai" id="lbl-key-xai">xAI API Keys (one per line)</label>
+                    <textarea id="key-xai" rows="2" style="height: 60px; font-family: monospace; resize: vertical;" placeholder="Paste xAI API Keys..."></textarea>
+                </div>
+                <div class="setting-item">
+                    <label for="key-ollama" id="lbl-key-ollama">Ollama Endpoint URLs (one per line)</label>
+                    <textarea id="key-ollama" rows="2" style="height: 60px; font-family: monospace; resize: vertical;" placeholder="Paste Ollama URLs (e.g. http://localhost:11434)..."></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VieNeu Config Panel -->
+    <div class="side-panel card-vieneu-config" id="panel-vieneu-config">
+        <div class="card-body" id="body-vieneu-config">
+            <div class="settings-grid" style="grid-template-columns: 1fr; gap: 0.75rem;">
+                <div class="setting-item">
+                    <label for="setting-vieneu-mode">VieNeu-TTS Mode</label>
+                    <select id="setting-vieneu-mode" style="padding: 0.45rem 0.6rem; font-size: 0.8rem;">
+                        <option value="local">Local ONNX / CPU</option>
+                        <option value="remote">Remote API Server</option>
+                    </select>
+                </div>
+                <div class="setting-item" id="vieneu-local-version-container">
+                    <label for="setting-vieneu-version" id="lbl-vieneu-version">VieNeu-TTS Version</label>
+                    <select id="setting-vieneu-version" style="padding: 0.45rem 0.6rem; font-size: 0.8rem;">
+                        <option value="v3" id="opt-vieneu-v3">v3 (ONNX, 48kHz, Emotion Tags)</option>
+                        <option value="v2" id="opt-vieneu-v2">v2 (GGUF, 24kHz, 10x Faster)</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <label for="setting-vieneu-batch">VieNeu paragraphs per synth call</label>
+                    <input type="number" id="setting-vieneu-batch" value="1" min="1" max="20" step="1" style="padding: 0.45rem 0.6rem; font-size: 0.8rem;">
+                </div>
+                <div class="setting-item" id="vieneu-local-onnx-container">
+                    <label for="setting-vieneu-onnx-dir">VieNeu local ONNX / GGUF directory</label>
+                    <div style="display: grid; grid-template-columns: 1fr auto; gap: 0.5rem;">
+                        <input type="text" id="setting-vieneu-onnx-dir" placeholder="/app/downloads/models/vieneu/onnx" style="padding: 0.45rem 0.6rem; font-size: 0.8rem;">
+                        <button type="button" id="btn-download-vieneu-onnx" class="btn btn-secondary btn-sm">Get Model</button>
+                    </div>
+                </div>
+                <div class="setting-item" id="vieneu-local-codec-container">
+                    <label for="setting-vieneu-codec-dir">VieNeu local codec directory</label>
+                    <div style="display: grid; grid-template-columns: 1fr auto; gap: 0.5rem;">
+                        <input type="text" id="setting-vieneu-codec-dir" placeholder="/app/downloads/models/vieneu/codec" style="padding: 0.45rem 0.6rem; font-size: 0.8rem;">
+                        <button type="button" id="btn-download-vieneu-codec" class="btn btn-secondary btn-sm">Get Model</button>
+                    </div>
+                </div>
+                <div class="setting-item checkbox-item" id="vieneu-local-offline-container" style="display: flex; flex-direction: row; align-items: center; gap: 0.5rem; grid-column: span 1;">
+                    <input type="checkbox" id="setting-vieneu-hf-offline" checked style="width: auto;">
+                    <label for="setting-vieneu-hf-offline" style="cursor: pointer;">Hugging Face Offline Mode</label>
+                </div>
+                <div class="setting-item hidden" id="vieneu-remote-url-container">
+                    <label for="setting-vieneu-api-base">Remote VieNeu API URL</label>
+                    <input type="text" id="setting-vieneu-api-base" placeholder="http://localhost:23333/v1" style="padding: 0.45rem 0.6rem; font-size: 0.8rem;">
+                </div>
+                <div class="setting-item hidden" id="vieneu-remote-model-container">
+                    <label for="setting-vieneu-model-name">Remote Model Name</label>
+                    <input type="text" id="setting-vieneu-model-name" placeholder="pnnbao-ump/VieNeu-TTS-v3-Turbo" style="padding: 0.45rem 0.6rem; font-size: 0.8rem;">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Providers Panel -->
+    <div class="side-panel card-providers" id="panel-providers">
+        <div class="card-body" id="body-providers">
+            <div class="settings-grid" style="grid-template-columns: 1fr; gap: 0.75rem;">
+                <div class="setting-item">
+                    <label for="setting-fish-speech-api-url" id="lbl-fish-speech-api-url">Fish Speech API URL</label>
+                    <input type="text" id="setting-fish-speech-api-url" placeholder="http://localhost:8080/v1/tts" style="padding: 0.45rem 0.6rem; font-size: 0.8rem;">
+                </div>
+                <div class="setting-item">
+                    <label for="setting-fish-speech-api-key" id="lbl-fish-speech-api-key">Fish Speech API Key</label>
+                    <input type="password" id="setting-fish-speech-api-key" placeholder="Enter API Key if using cloud service..." style="padding: 0.45rem 0.6rem; font-size: 0.8rem;">
+                </div>
+                <div class="setting-item">
+                    <label for="setting-fish-speech-ref-audio" id="lbl-fish-speech-ref-audio">Fish Speech Reference Audio Path/ID</label>
+                    <input type="text" id="setting-fish-speech-ref-audio" placeholder="e.g. /app/downloads/ref.wav or reference_id" style="padding: 0.45rem 0.6rem; font-size: 0.8rem;">
+                </div>
+                <div class="setting-item">
+                    <label for="setting-omnivoice-api-url" id="lbl-omnivoice-api-url">OmniVoice API URL</label>
+                    <input type="text" id="setting-omnivoice-api-url" placeholder="http://localhost:8000/v1/audio/speech (or 'local')" style="padding: 0.45rem 0.6rem; font-size: 0.8rem;">
+                </div>
+                <div class="setting-item">
+                    <label for="setting-omnivoice-instruct" id="lbl-omnivoice-instruct">OmniVoice Voice Design Instructions</label>
+                    <input type="text" id="setting-omnivoice-instruct" placeholder="e.g. female, clear speech" style="padding: 0.45rem 0.6rem; font-size: 0.8rem;">
+                </div>
+                <div class="setting-item">
+                    <label for="setting-omnivoice-ref-audio" id="lbl-omnivoice-ref-audio">OmniVoice Reference Audio Path/Profile ID</label>
+                    <input type="text" id="setting-omnivoice-ref-audio" placeholder="e.g. /app/downloads/ref.wav or clone:profile_name" style="padding: 0.45rem 0.6rem; font-size: 0.8rem;">
+                </div>
+                <div class="setting-item">
+                    <label for="setting-generic-tts-url">Generic TTS API URL</label>
+                    <input type="text" id="setting-generic-tts-url" placeholder="http://client-gpu:8000/v1/audio/speech" style="padding: 0.45rem 0.6rem; font-size: 0.8rem;">
+                </div>
+                <div class="setting-item">
+                    <label for="setting-generic-tts-key">Generic TTS API Key</label>
+                    <input type="password" id="setting-generic-tts-key" placeholder="Optional API key" style="padding: 0.45rem 0.6rem; font-size: 0.8rem;">
+                </div>
+                <div class="setting-item">
+                    <label for="setting-generic-tts-model">Generic TTS model / voice</label>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                        <input type="text" id="setting-generic-tts-model" placeholder="tts-1" style="padding: 0.45rem 0.6rem; font-size: 0.8rem;">
+                        <input type="text" id="setting-generic-tts-voice" placeholder="default" style="padding: 0.45rem 0.6rem; font-size: 0.8rem;">
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <label for="setting-asr-provider">Subtitle ASR Provider</label>
+                    <select id="setting-asr-provider" style="padding: 0.45rem 0.6rem; font-size: 0.8rem;">
+                        <option value="remote_openai">Remote OpenAI-compatible</option>
+                        <option value="remote_custom">Remote custom JSON</option>
+                        <option value="local_faster_whisper">Local faster-whisper path</option>
+                        <option value="managed_faster_whisper">Managed faster-whisper download</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <label for="setting-asr-remote-url">Remote ASR URL / API Key</label>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                        <input type="text" id="setting-asr-remote-url" placeholder="http://gpu:8000/v1/audio/transcriptions" style="padding: 0.45rem 0.6rem; font-size: 0.8rem;">
+                        <input type="password" id="setting-asr-remote-key" placeholder="Optional API key" style="padding: 0.45rem 0.6rem; font-size: 0.8rem;">
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <label for="setting-asr-local-path">Local/managed ASR model</label>
+                    <div style="display: grid; grid-template-columns: 1fr auto; gap: 0.5rem;">
+                        <input type="text" id="setting-asr-local-path" placeholder="/app/downloads/models/asr/model-dir" style="padding: 0.45rem 0.6rem; font-size: 0.8rem;">
+                        <button type="button" id="btn-download-asr-model" class="btn btn-secondary btn-sm">Get Model</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Config Panel -->
+    <div class="side-panel card-system-config" id="panel-system-config">
+        <div class="card-body" id="body-system-config">
+            <div class="settings-grid" style="grid-template-columns: 1fr; gap: 0.75rem;">
+                <div class="setting-item">
+                    <label for="setting-cpu-threads" id="lbl-cpu-threads">Max CPU Cores/Threads used by VieNeu-TTS</label>
+                    <select id="setting-cpu-threads" style="padding: 0.45rem 0.6rem; font-size: 0.8rem;">
+                        <option value="0">Auto (Balanced capacity)</option>
+                        <option value="1">1 Core</option>
+                        <option value="2">2 Cores</option>
+                        <option value="3">3 Cores (Recommended for 4-core server)</option>
+                        <option value="4">4 Cores</option>
+                        <option value="6">6 Cores</option>
+                        <option value="8">8 Cores</option>
+                        <option value="10">10 Cores (Recommended for 14-core host)</option>
+                        <option value="12">12 Cores</option>
+                        <option value="14">14 Cores</option>
+                        <option value="16">16 Cores</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <label for="setting-xhs-api-url">XiaoHongShu sidecar API URL</label>
+                    <input type="text" id="setting-xhs-api-url" placeholder="http://xhs-downloader:5556/xhs/detail" style="padding: 0.45rem 0.6rem; font-size: 0.8rem;">
+                </div>
+                <div class="setting-item checkbox-item" style="display: flex; flex-direction: row; align-items: center; gap: 0.5rem;">
+                    <input type="checkbox" id="setting-webgpu-enabled" checked style="width: auto;">
+                    <label for="setting-webgpu-enabled" style="cursor: pointer;">Expose WebGPU capability adapter</label>
+                </div>
+                <div class="setting-item" style="grid-column: span 1; border-top: 1px solid var(--border-color); padding-top: 0.75rem; margin-top: 0.5rem;">
+                    <label>Cache Management</label>
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.5rem;">
+                        <span id="cache-usage-text" style="font-size: 0.8rem; color: var(--text-muted);">Calculating cache...</span>
+                        <button type="button" id="btn-clear-cache" class="btn btn-secondary btn-xs">Clear Cache</button>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <input type="checkbox" id="setting-wipe-cache" style="width: auto; margin: 0;">
+                        <label for="setting-wipe-cache" style="font-size: 0.8rem; cursor: pointer;">Wipe cache after each generation</label>
+                    </div>
+                </div>
+                <div class="setting-item" style="grid-column: span 1; border-top: 1px solid var(--border-color); padding-top: 0.75rem; margin-top: 0.5rem;">
+                    <label for="setting-max-job-threads">Max Concurrent Job Threads</label>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <input type="range" id="setting-max-job-threads" min="1" max="16" step="1" value="2" style="flex: 1;">
+                        <span id="max-job-threads-val" style="font-size: 0.8rem; font-weight: 600; min-width: 20px;">2</span>
+                    </div>
+                    <span style="font-size: 0.7rem; color: var(--text-muted);">Capping job execution concurrency to prevent lag.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Presets Panel -->
+    <div class="side-panel card-presets" id="panel-presets">
+        <div class="card-body">
+            <div class="preset-controls" style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem;">
+                <select id="preset-selector" style="flex: 1; padding: 0.45rem 0.6rem; font-size: 0.85rem;">
+                    <option value="">-- Select Preset --</option>
+                </select>
+                <button type="button" id="btn-save-preset" class="btn btn-primary btn-sm">Save Current</button>
+            </div>
+            <div id="presets-list" style="display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem;">
+                <!-- Preset pills will go here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Projects Panel -->
+    <div class="side-panel card-projects" id="panel-projects">
+        <div class="card-body" id="body-projects">
+            <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem; align-items: center;">
+                <button type="button" id="btn-save-project" class="btn btn-primary btn-sm" style="flex: 1;">Save Current As Project</button>
+            </div>
+            <div class="list-wrapper" id="list-projects" style="max-height: 400px; overflow-y: auto;">
+                <!-- Project list items will go here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Jobs History Panel -->
+    <div class="side-panel card-jobs-history" id="panel-jobs-history">
+        <div class="card-body" id="body-jobs-history">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                <span style="font-size: 0.8rem; color: var(--text-muted);" id="jobs-count-text">No active jobs</span>
+                <button type="button" id="btn-wipe-jobs" class="btn btn-secondary btn-xs">Wipe All History</button>
+            </div>
+            <div class="list-wrapper" id="list-jobs-history" style="max-height: 400px; overflow-y: auto;">
+                <!-- Job item rows will go here dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Gallery Panel -->
+    <div class="side-panel card-gallery" id="panel-gallery">
+        <div class="card-body">
+            <div id="gallery-container" style="max-height: 500px; overflow-y: auto;">
+                <p class="placeholder-text">No generated videos yet.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Monitor (Status) Panel -->
+    <div class="side-panel card-status" id="panel-status">
+        <div class="card-body">
+            <div class="status-grid">
+                <div class="status-item">
+                    <div class="status-label">
+                        <span>CPU Usage</span>
+                        <span id="cpu-val">0%</span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="cpu-bar" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">
+                        <span>RAM Usage</span>
+                        <span id="ram-val">0 / 0 GB (0%)</span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="ram-bar" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">
+                        <span>Disk Space</span>
+                        <span id="disk-val">0 / 0 GB (0%)</span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="disk-bar" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="webgpu-status-bar" style="margin-top: 0.75rem; padding: 0.45rem 0.6rem; background: rgba(255,255,255,0.05); border-radius: 6px; display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; border: 1px solid var(--border-color);">
+                <span>WebGPU Hardware Acceleration:</span>
+                <span id="webgpu-status-badge" class="badge-status-neutral" style="padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 600; font-size: 0.75rem; background: rgba(255,255,255,0.1);">Checking...</span>
+            </div>
+            <div class="htop-terminal-header" style="margin-top: 1rem;">Active CPU Processes (htop)</div>
+            <div class="htop-terminal" id="htop-processes">
+                <div class="htop-line header">  PID  COMMAND      CPU%  MEM%</div>
+                <div class="htop-list" id="process-list">
+                    <div class="htop-line placeholder-text">Waiting for performance stats...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Subtitle Review Modal -->
+    <div id="subtitle-review-modal" class="modal-overlay hidden">
+        <div class="modal-card" style="max-width: 800px; width: 90%;">
+            <h3>Subtitle Review & Editor</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+                Review and edit subtitle timestamps and text before final video compilation.
+            </p>
+            <div id="subtitle-editor-container" style="max-height: 400px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 6px; padding: 0.5rem; margin-bottom: 1rem; background: var(--bg-dark);">
+                <!-- Table / list of cues will go here -->
+            </div>
+            <div class="modal-actions" style="display: flex; justify-content: space-between;">
+                <div>
+                    <button type="button" id="btn-sub-review-skip" class="btn btn-secondary">Skip Review</button>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button type="button" id="btn-sub-review-cancel" class="btn btn-danger">Cancel Job</button>
+                    <button type="button" id="btn-sub-review-submit" class="btn btn-success">Apply & Render</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Modal for Web Confirmations -->
+    <div id="custom-confirm-modal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <h3 id="confirm-modal-title">Confirm Action</h3>
+            <p id="confirm-modal-message">Are you sure you want to proceed?</p>
+            <div class="modal-actions">
+                <button type="button" id="btn-confirm-cancel" class="btn btn-secondary">Cancel</button>
+                <button type="button" id="btn-confirm-ok" class="btn btn-primary">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Modal for Web Prompts -->
+    <div id="custom-prompt-modal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <h3 id="prompt-modal-title">Enter Value</h3>
+            <p id="prompt-modal-message" style="margin-bottom: 0.75rem; font-size: 0.85rem; color: var(--text-muted);"></p>
+            <input type="text" id="prompt-modal-input" style="width: 100%; margin-bottom: 1rem;">
+            <textarea id="prompt-modal-textarea" style="width: 100%; height: 180px; margin-bottom: 1rem; display: none; font-family: monospace; font-size: 0.8rem; resize: vertical;"></textarea>
+            <div class="modal-actions">
+                <button type="button" id="btn-prompt-cancel" class="btn btn-secondary">Cancel</button>
+                <button type="button" id="btn-prompt-ok" class="btn btn-primary">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Setup Wizard Modal -->
+    <div id="setup-wizard-modal" class="modal-overlay hidden">
+        <div class="modal-card" style="max-width: 600px; width: 90%;">
+            <h3><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wand-sparkles btn-icon" style="vertical-align: middle; margin-right: 0.25rem;"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/></svg>TurboVideo Setup Checklist Wizard</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+                This diagnostic check scans your system configuration, folders, external tools, and connectivity.
+            </p>
+            <div id="wizard-results-container" style="max-height: 400px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 6px; padding: 1rem; margin-bottom: 1rem; background: var(--bg-dark); display: flex; flex-direction: column; gap: 0.75rem;">
+                <p class="placeholder-text">Running system diagnostics...</p>
+            </div>
+            <div class="modal-actions" style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+                <button type="button" id="btn-wizard-recheck" class="btn btn-secondary">Run Again</button>
+                <button type="button" id="btn-wizard-close" class="btn btn-primary">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="/frontend/js/app_main.js"></script>
+</body>
+</html>

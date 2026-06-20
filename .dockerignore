@@ -1,0 +1,11 @@
+_archive/
+downloads/
+backend/cache/
+**/__pycache__/
+*.pyc
+.git/
+.codex/
+.agents/
+implementation_plan_v1.4.5.md
+creds.json
+config.json

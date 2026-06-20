@@ -1,0 +1,14 @@
+venv/
+_archive/
+downloads/
+backend/cache/
+**/__pycache__/
+*.pyc
+creds.json
+config.json
+.pytest_cache/
+.agents/
+implementation_plan_v1.4.5.md
+VieNeu-TTS/
+.env
+bgfx/

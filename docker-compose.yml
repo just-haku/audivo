@@ -1,0 +1,45 @@
+services:
+  web:
+    build: .
+    container_name: turbovideo
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    environment:
+      VIENEU_CPU_THREADS: "${VIENEU_CPU_THREADS:-0}"
+      VIENEU_ONNX_DIR: "${VIENEU_ONNX_DIR:-}"
+      VIENEU_CODEC_DIR: "${VIENEU_CODEC_DIR:-}"
+      HF_HUB_DISABLE_IMPLICIT_TOKEN_WARNING: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      OMP_NUM_THREADS: "${NATIVE_THREADS:-1}"
+      MKL_NUM_THREADS: "${NATIVE_THREADS:-1}"
+      OPENBLAS_NUM_THREADS: "${NATIVE_THREADS:-1}"
+      ONNXRUNTIME_NUM_THREADS: "${NATIVE_THREADS:-1}"
+    volumes:
+      - ./downloads:/app/downloads
+      - ./config.json:/app/config.json
+      - ./creds.json:/app/creds.json
+      - ./backend/cache:/app/backend/cache
+      - ./frontend:/app/frontend
+    deploy:
+      resources:
+        limits:
+          cpus: "${DOCKER_CPUS:-4.0}"
+          memory: "${DOCKER_MEM:-4G}"
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    restart: always
+
+  xhs-downloader:
+    image: "${XHS_DOWNLOADER_IMAGE:-joeanamier/xhs-downloader:latest}"
+    container_name: turbovideo-xhs-downloader
+    profiles:
+      - xhs
+    ports:
+      - "${XHS_PORT:-5556}:5556"
+    volumes:
+      - ./downloads/xhs:/app/downloads
+    restart: unless-stopped

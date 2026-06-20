@@ -1,0 +1,4 @@
+-r requirements/core.txt
+-r requirements/tts-remote.txt
+-r requirements/local-asr.txt
+-r requirements/llm-local.txt
