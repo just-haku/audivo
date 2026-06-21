@@ -531,40 +531,46 @@ def get_sliced_bg_music(bg_music_info: list[dict], total_duration: float, start_
     current_pos_ms = start_ms % total_duration_ms
     
     sliced_audio = AudioSegment.empty()
+    loaded_bgms = {}
     
-    while len(sliced_audio) < duration_needed_ms:
-        # Find which BGM file corresponds to current_pos_ms
-        accumulated_ms = 0
-        target_file = None
-        offset_in_file_ms = 0
-        
-        for bgm in bg_music_info:
-            bgm_dur_ms = int(bgm["duration"] * 1000)
-            if accumulated_ms + bgm_dur_ms > current_pos_ms:
-                target_file = bgm["path"]
-                offset_in_file_ms = current_pos_ms - accumulated_ms
-                break
-            accumulated_ms += bgm_dur_ms
+    try:
+        while len(sliced_audio) < duration_needed_ms:
+            # Find which BGM file corresponds to current_pos_ms
+            accumulated_ms = 0
+            target_file = None
+            offset_in_file_ms = 0
             
-        if not target_file:
-            # Fallback if precision error occurs
-            target_file = bg_music_info[-1]["path"]
-            offset_in_file_ms = current_pos_ms - (accumulated_ms - int(bg_music_info[-1]["duration"] * 1000))
-            
-        # Determine how much duration we can read from this file
-        target_dur_ms = int(get_media_duration(target_file) * 1000)
-        remaining_in_file_ms = target_dur_ms - offset_in_file_ms
-        chunk_len_ms = min(remaining_in_file_ms, duration_needed_ms - len(sliced_audio))
-        
-        if chunk_len_ms > 0:
-            try:
-                full_file_audio = AudioSegment.from_file(target_file)
-                sliced_audio += full_file_audio[offset_in_file_ms : offset_in_file_ms + chunk_len_ms]
-            except Exception:
-                sliced_audio += AudioSegment.silent(duration=chunk_len_ms)
+            for bgm in bg_music_info:
+                bgm_dur_ms = int(bgm["duration"] * 1000)
+                if accumulated_ms + bgm_dur_ms > current_pos_ms:
+                    target_file = bgm["path"]
+                    offset_in_file_ms = current_pos_ms - accumulated_ms
+                    break
+                accumulated_ms += bgm_dur_ms
                 
-        # Advance current position
-        current_pos_ms = (current_pos_ms + chunk_len_ms) % total_duration_ms
+            if not target_file:
+                # Fallback if precision error occurs
+                target_file = bg_music_info[-1]["path"]
+                offset_in_file_ms = current_pos_ms - (accumulated_ms - int(bg_music_info[-1]["duration"] * 1000))
+                
+            # Determine how much duration we can read from this file
+            target_dur_ms = int(get_media_duration(target_file) * 1000)
+            remaining_in_file_ms = target_dur_ms - offset_in_file_ms
+            chunk_len_ms = min(remaining_in_file_ms, duration_needed_ms - len(sliced_audio))
+            
+            if chunk_len_ms > 0:
+                try:
+                    if target_file not in loaded_bgms:
+                        loaded_bgms[target_file] = AudioSegment.from_file(target_file)
+                    full_file_audio = loaded_bgms[target_file]
+                    sliced_audio += full_file_audio[offset_in_file_ms : offset_in_file_ms + chunk_len_ms]
+                except Exception:
+                    sliced_audio += AudioSegment.silent(duration=chunk_len_ms)
+                    
+            # Advance current position
+            current_pos_ms = (current_pos_ms + chunk_len_ms) % total_duration_ms
+    finally:
+        loaded_bgms.clear()
         
     return sliced_audio
 

@@ -475,39 +475,82 @@ def check_resources_and_cool_down(add_log_fn):
     ram_limit_mb = int(config.get("resource_guard_ram_limit_mb", 1500) or 1500)
     cpu_limit_pct = float(config.get("resource_guard_cpu_load_pct", 90) or 90) / 100.0
     
-    # 1. Check RAM available and Swap
+    # 1. Check Container (cgroup) memory limit if inside docker
+    container_ram_low = False
     try:
-        if os.path.exists('/proc/meminfo'):
-            with open('/proc/meminfo', 'r') as f:
-                lines = f.readlines()
-            mem_info = {}
-            for line in lines:
-                if ':' in line:
-                    k, v = line.split(':', 1)
-                    mem_info[k.strip()] = v.strip()
-                    
-            def to_mb(val):
-                parts = val.split()
-                if len(parts) >= 1:
-                    num = int(parts[0])
-                    if len(parts) >= 2 and parts[1].lower() == 'kb':
-                        return num // 1024
-                    return num
-                return 0
+        limit_bytes = None
+        usage_bytes = None
+        
+        # cgroups v2
+        max_path = "/sys/fs/cgroup/memory.max"
+        curr_path = "/sys/fs/cgroup/memory.current"
+        if os.path.exists(max_path) and os.path.exists(curr_path):
+            with open(max_path, "r") as f:
+                val = f.read().strip()
+                if val != "max":
+                    limit_bytes = int(val)
+            with open(curr_path, "r") as f:
+                usage_bytes = int(f.read().strip())
                 
-            mem_total = to_mb(mem_info.get("MemTotal", "0"))
-            mem_avail = to_mb(mem_info.get("MemAvailable", "0"))
+        # cgroups v1 fallback
+        if limit_bytes is None or usage_bytes is None:
+            max_path_v1 = "/sys/fs/cgroup/memory/memory.limit_in_bytes"
+            curr_path_v1 = "/sys/fs/cgroup/memory/memory.usage_in_bytes"
+            if os.path.exists(max_path_v1) and os.path.exists(curr_path_v1):
+                with open(max_path_v1, "r") as f:
+                    limit_bytes = int(f.read().strip())
+                with open(curr_path_v1, "r") as f:
+                    usage_bytes = int(f.read().strip())
+                    
+        if limit_bytes and usage_bytes:
+            limit_mb = limit_bytes // (1024 * 1024)
+            usage_mb = usage_bytes // (1024 * 1024)
+            avail_mb = limit_mb - usage_mb
+            avail_pct = (avail_mb / limit_mb) * 100 if limit_mb > 0 else 100.0
             
-            if mem_avail > 0 and mem_total > 0:
-                avail_pct = (mem_avail / mem_total) * 100
-                if mem_avail < ram_limit_mb or avail_pct < 10.0:
-                    add_log_fn(f"[Resource Guard] Available RAM is low ({mem_avail}MB / {mem_total}MB, {avail_pct:.1f}%). Pausing 6s to let the OS swap and reclaim memory...")
-                    time.sleep(6)
-                    gc.collect()
+            # If we have less than 800MB available inside the container, or less than 10% memory left
+            if avail_mb < 800 or avail_pct < 10.0:
+                add_log_fn(f"[Resource Guard] Docker container RAM is critically low ({avail_mb}MB / {limit_mb}MB available, {avail_pct:.1f}%). Pausing 8s to let Python/OS reclaim memory...")
+                container_ram_low = True
+                time.sleep(8)
+                gc.collect()
     except Exception:
         pass
+
+    # 2. Check host RAM available and Swap (if container check was fine or skipped)
+    if not container_ram_low:
+        try:
+            if os.path.exists('/proc/meminfo'):
+                with open('/proc/meminfo', 'r') as f:
+                    lines = f.readlines()
+                mem_info = {}
+                for line in lines:
+                    if ':' in line:
+                        k, v = line.split(':', 1)
+                        mem_info[k.strip()] = v.strip()
+                        
+                def to_mb(val):
+                    parts = val.split()
+                    if len(parts) >= 1:
+                        num = int(parts[0])
+                        if len(parts) >= 2 and parts[1].lower() == 'kb':
+                            return num // 1024
+                        return num
+                    return 0
+                    
+                mem_total = to_mb(mem_info.get("MemTotal", "0"))
+                mem_avail = to_mb(mem_info.get("MemAvailable", "0"))
+                
+                if mem_avail > 0 and mem_total > 0:
+                    avail_pct = (mem_avail / mem_total) * 100
+                    if mem_avail < ram_limit_mb or avail_pct < 10.0:
+                        add_log_fn(f"[Resource Guard] Available RAM is low ({mem_avail}MB / {mem_total}MB, {avail_pct:.1f}%). Pausing 6s to let the OS swap and reclaim memory...")
+                        time.sleep(6)
+                        gc.collect()
+        except Exception:
+            pass
         
-    # 2. Check CPU Load / Thermal Protection
+    # 3. Check CPU Load / Thermal Protection
     try:
         if os.path.exists('/proc/loadavg'):
             with open('/proc/loadavg', 'r') as f:
@@ -549,8 +592,16 @@ def run_local_tts_subprocess(segments: list[dict[str, Any]], version: str, cpu_t
     if not uncached_segments:
         return
 
-    # Split into batches of at most vieneu_subprocess_batch_size to avoid memory accumulation/leaks and keep RAM usage low.
-    sub_batch_size = int(config.get("vieneu_subprocess_batch_size", 12) or 12)
+    # Split into batches. For large generation tasks, dynamically scale the batch size to reduce disk I/O and model loading overhead.
+    config_batch_size = int(config.get("vieneu_subprocess_batch_size", 12) or 12)
+    total_uncached = len(uncached_segments)
+    
+    # Scale batch size dynamically if there are many segments, but cap it at 80 to prevent excessive memory accumulation
+    if total_uncached > 150:
+        sub_batch_size = max(config_batch_size, min(80, total_uncached // 15))
+        add_log(f"[Optimization] Dynamically scaled VieNeu-TTS batch size to {sub_batch_size} (from config: {config_batch_size}) to reduce model loading overhead for {total_uncached} segments.")
+    else:
+        sub_batch_size = config_batch_size
 
     # Resolve VieNeu paths based on version (v2 or v3)
     if version == "v2":
