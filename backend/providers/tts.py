@@ -455,6 +455,66 @@ def synthesize_generic_tts(text: str, voice_name: str, rate: float, config: dict
     return synthesize_openai_speech(text, url, api_key, model, voice, rate, "", timeout)
 
 
+def check_resources_and_cool_down(add_log_fn):
+    import time
+    import gc
+    import os
+
+    gc.collect()
+    
+    # 1. Check RAM available and Swap
+    try:
+        if os.path.exists('/proc/meminfo'):
+            with open('/proc/meminfo', 'r') as f:
+                lines = f.readlines()
+            mem_info = {}
+            for line in lines:
+                if ':' in line:
+                    k, v = line.split(':', 1)
+                    mem_info[k.strip()] = v.strip()
+                    
+            def to_mb(val):
+                parts = val.split()
+                if len(parts) >= 1:
+                    num = int(parts[0])
+                    if len(parts) >= 2 and parts[1].lower() == 'kb':
+                        return num // 1024
+                    return num
+                return 0
+                
+            mem_total = to_mb(mem_info.get("MemTotal", "0"))
+            mem_avail = to_mb(mem_info.get("MemAvailable", "0"))
+            
+            if mem_avail > 0 and mem_total > 0:
+                avail_pct = (mem_avail / mem_total) * 100
+                if mem_avail < 1524 or avail_pct < 10.0:
+                    add_log_fn(f"[Resource Guard] Available RAM is low ({mem_avail}MB / {mem_total}MB, {avail_pct:.1f}%). Pausing 6s to let the OS swap and reclaim memory...")
+                    time.sleep(6)
+                    gc.collect()
+    except Exception:
+        pass
+        
+    # 2. Check CPU Load / Thermal Protection
+    try:
+        if os.path.exists('/proc/loadavg'):
+            with open('/proc/loadavg', 'r') as f:
+                content = f.read().strip()
+            load_1 = float(content.split()[0])
+            cores = os.cpu_count() or 4
+            
+            if load_1 > (cores * 0.9):
+                sleep_time = min(max(int(load_1 - cores * 0.9) + 2, 2), 10)
+                add_log_fn(f"[Resource Guard] CPU Load is high ({load_1:.2f} avg on {cores} cores). Pausing {sleep_time}s to cool down CPU...")
+                time.sleep(sleep_time)
+            else:
+                # Rest CPU briefly between batches
+                time.sleep(1.5)
+        else:
+            time.sleep(1.5)
+    except Exception:
+        time.sleep(1.5)
+
+
 def run_local_tts_subprocess(segments: list[dict[str, Any]], version: str, cpu_threads: int, cache_dir: str):
     try:
         from backend.config import load_config, MODELS_DIR, add_log
@@ -566,6 +626,8 @@ def run_local_tts_subprocess(segments: list[dict[str, Any]], version: str, cpu_t
                     f"VieNeu-TTS subprocess batch {batch_idx + 1} failed with code {process.returncode}.\n"
                     f"Log output:\n{chr(10).join(stdout_lines)}"
                 )
+            
+            check_resources_and_cool_down(add_log)
         finally:
             if os.path.exists(temp_json_path):
                 try:

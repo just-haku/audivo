@@ -25,12 +25,6 @@ services:
         limits:
           cpus: "${DOCKER_CPUS:-4.0}"
           memory: "${DOCKER_MEM:-4G}"
-    healthcheck:
-      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 5s
     restart: always
 
   xhs-downloader:
