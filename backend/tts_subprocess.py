@@ -32,7 +32,9 @@ def main():
     
     if not segments:
         print("No segments to synthesize.")
-        sys.exit(0)
+        sys.stdout.flush()
+        sys.stderr.flush()
+        os._exit(0)
         
     # Determine the number of threads for the engine
     # For v3 ONNX, intra-op multi-threading causes massive context switching overhead
@@ -112,7 +114,9 @@ def main():
             tts = Vieneu(**kwargs)
     except Exception as e:
         print(f"Error initializing VieNeu engine: {e}", file=sys.stderr)
-        sys.exit(1)
+        sys.stdout.flush()
+        sys.stderr.flush()
+        os._exit(1)
         
     print("Engine loaded. Synthesizing segments...")
     
@@ -139,9 +143,14 @@ def main():
             print(f"  Done in {t1-t0:.2f}s")
         except Exception as e:
             print(f"Error synthesizing segment {idx}: {e}", file=sys.stderr)
-            sys.exit(1)
+            sys.stdout.flush()
+            sys.stderr.flush()
+            os._exit(1)
             
     print("All segments synthesized successfully.")
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(0)
 
 if __name__ == "__main__":
     main()
