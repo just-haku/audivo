@@ -61,6 +61,10 @@ DEFAULT_CONFIG = {
     "vieneu_hf_offline": True,
     "vieneu_batch_paragraphs": 1,
     "vieneu_subprocess_batch_size": 12,
+    "render_max_workers": 2,
+    "resource_guard_ram_limit_mb": 1500,
+    "resource_guard_cpu_load_pct": 90,
+    "resource_guard_enabled": True,
     "fish_speech_api_url": "",
     "fish_speech_api_key": "",
     "fish_speech_ref_audio": "",
@@ -174,13 +178,26 @@ def load_config() -> dict:
         return DEFAULT_CONFIG
 
 def save_config(config_data: dict):
-    """Saves settings back to config.json."""
+    """Saves settings back to config.json, merging with existing config to preserve manual edits."""
     try:
-        # Clean config_data to keep only DEFAULT_CONFIG keys
-        cleaned = {}
+        existing = {}
+        if os.path.exists(CONFIG_PATH):
+            try:
+                with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+                    existing = json.load(f)
+            except Exception:
+                pass
+
+        merged = {}
         for k in DEFAULT_CONFIG.keys():
-            cleaned[k] = config_data.get(k, DEFAULT_CONFIG[k])
+            if k in config_data:
+                merged[k] = config_data[k]
+            elif k in existing:
+                merged[k] = existing[k]
+            else:
+                merged[k] = DEFAULT_CONFIG[k]
+
         with open(CONFIG_PATH, "w", encoding="utf-8") as f:
-            json.dump(cleaned, f, indent=4)
+            json.dump(merged, f, indent=4)
     except Exception as e:
         print(f"Error saving config.json: {e}")

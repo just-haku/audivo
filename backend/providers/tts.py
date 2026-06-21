@@ -462,6 +462,19 @@ def check_resources_and_cool_down(add_log_fn):
 
     gc.collect()
     
+    try:
+        from backend.config import load_config
+        config = load_config()
+    except Exception:
+        config = {}
+
+    if not config.get("resource_guard_enabled", True):
+        time.sleep(0.5)
+        return
+
+    ram_limit_mb = int(config.get("resource_guard_ram_limit_mb", 1500) or 1500)
+    cpu_limit_pct = float(config.get("resource_guard_cpu_load_pct", 90) or 90) / 100.0
+    
     # 1. Check RAM available and Swap
     try:
         if os.path.exists('/proc/meminfo'):
@@ -487,7 +500,7 @@ def check_resources_and_cool_down(add_log_fn):
             
             if mem_avail > 0 and mem_total > 0:
                 avail_pct = (mem_avail / mem_total) * 100
-                if mem_avail < 1524 or avail_pct < 10.0:
+                if mem_avail < ram_limit_mb or avail_pct < 10.0:
                     add_log_fn(f"[Resource Guard] Available RAM is low ({mem_avail}MB / {mem_total}MB, {avail_pct:.1f}%). Pausing 6s to let the OS swap and reclaim memory...")
                     time.sleep(6)
                     gc.collect()
@@ -502,8 +515,8 @@ def check_resources_and_cool_down(add_log_fn):
             load_1 = float(content.split()[0])
             cores = os.cpu_count() or 4
             
-            if load_1 > (cores * 0.9):
-                sleep_time = min(max(int(load_1 - cores * 0.9) + 2, 2), 10)
+            if load_1 > (cores * cpu_limit_pct):
+                sleep_time = min(max(int(load_1 - cores * cpu_limit_pct) + 2, 2), 10)
                 add_log_fn(f"[Resource Guard] CPU Load is high ({load_1:.2f} avg on {cores} cores). Pausing {sleep_time}s to cool down CPU...")
                 time.sleep(sleep_time)
             else:
