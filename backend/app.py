@@ -5,11 +5,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
 from backend.config import GENERATED_DIR, FONTS_DIR, BASE_DIR
-from backend.routers import asr, config, materials, voices, gallery, system, generation, jobs, health, presets, projects, wizard
+from backend.routers import asr, config, materials, voices, gallery, system, generation, jobs, health, presets, projects, wizard, skeletal
 from backend.jobs import JobManager
+from backend.media_db import MediaDB
 
-# Initialize JobManager on startup to recover interrupted jobs
+# Initialize JobManager and MediaDB on startup to recover jobs and setup database tables
 JobManager()
+MediaDB()
 
 app = FastAPI(title="MoneyPrinterTurbo Clone API")
 
@@ -40,6 +42,7 @@ app.include_router(health.router)
 app.include_router(presets.router)
 app.include_router(projects.router)
 app.include_router(wizard.router)
+app.include_router(skeletal.router)
 
 @app.get("/")
 async def get_index():

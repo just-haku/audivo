@@ -15,6 +15,7 @@
         <!-- Header & Language Switcher -->
         <header class="app-header">
             <div class="header-utility">
+                <button type="button" id="btn-open-animator" class="btn btn-secondary btn-sm" style="margin-right: 0.75rem; font-weight: 600; background: var(--color-accent); border: none;">2D Skeletal Animator</button>
                 <select id="lang-selector" class="lang-select">
                     <option value="en-US">EN</option>
                     <option value="vi-VN">VI</option>
@@ -857,6 +858,204 @@
         </div>
     </div>
 
+    <!-- 2D Skeletal Animator Overlay -->
+    <div class="animator-overlay" id="animator-studio">
+        <header class="animator-header">
+            <div class="animator-logo">
+                <h2>2D Cartoon Skeletal Studio</h2>
+                <span class="badge">Spine-like Engine</span>
+            </div>
+            <div class="animator-header-actions">
+                <label for="animator-char-select" style="font-size: 0.85rem; color: #cbd5e1;">Active Character:</label>
+                <select id="animator-char-select" style="background: #1e293b; color: white; border: 1px solid var(--border-color); padding: 0.35rem 0.6rem; border-radius: 4px; font-size: 0.85rem;">
+                    <option value="">-- Create New Rig --</option>
+                </select>
+                <button type="button" id="btn-save-rig" class="btn btn-success btn-sm">Save Character Rig</button>
+                <button type="button" id="btn-close-animator" class="btn btn-danger btn-sm">Exit Studio</button>
+            </div>
+        </header>
+        <div class="animator-body">
+            <!-- Left Sidebar: Rig Tree & Limb uploader -->
+            <aside class="animator-sidebar animator-sidebar-left">
+                <div class="sidebar-section">
+                    <h3>Character Rig Profile</h3>
+                    <div class="inspector-item" style="margin-bottom: 0.5rem;">
+                        <label for="rig-char-id">Character Unique ID</label>
+                        <input type="text" id="rig-char-id" placeholder="e.g. hero_knight">
+                    </div>
+                    <div class="inspector-item">
+                        <label for="rig-char-name">Character Name</label>
+                        <input type="text" id="rig-char-name" placeholder="e.g. Hero Knight">
+                    </div>
+                </div>
+                <div class="sidebar-section">
+                    <h3>Upload Limb Assets</h3>
+                    <input type="file" id="animator-file-uploader" accept="image/png" style="display: none;">
+                    <button type="button" id="btn-upload-limb" class="btn btn-primary btn-sm" style="width:100%; display:block; text-align:center;">Upload Part (.png)</button>
+                    <div id="uploaded-limbs-list" style="margin-top: 0.5rem; display: flex; flex-wrap: wrap; gap: 0.25rem; max-height: 100px; overflow-y: auto;">
+                        <!-- Uploaded limb sprite badges appear here -->
+                    </div>
+                </div>
+                <div class="sidebar-section" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+                    <h3>Skeleton Hierarchy</h3>
+                    <div style="flex: 1; overflow-y: auto;">
+                        <ul class="hierarchy-tree" id="rig-bone-tree">
+                            <!-- Bone hierarchy dynamically populated here -->
+                        </ul>
+                    </div>
+                    <div style="display: flex; gap: 0.25rem; margin-top: 0.5rem;">
+                        <button type="button" id="btn-add-bone" class="btn btn-secondary btn-xs" style="flex: 1;">Add Bone</button>
+                        <button type="button" id="btn-delete-bone" class="btn btn-danger btn-xs" style="flex: 1;">Delete Bone</button>
+                    </div>
+                </div>
+            </aside>
+            
+            <!-- Center Canvas Area -->
+            <main class="animator-main">
+                <div class="canvas-wrapper">
+                    <div class="animator-canvas-container" id="canvas-container">
+                        <canvas class="animator-canvas" id="canvas-skeletal" width="640" height="640"></canvas>
+                    </div>
+                </div>
+            </main>
+            
+            <!-- Right Sidebar: Bone Inspector & Face/Presets Mapping -->
+            <aside class="animator-sidebar animator-sidebar-right">
+                <!-- Bone Inspector -->
+                <div class="sidebar-section" id="inspector-panel">
+                    <h3>Bone Inspector</h3>
+                    <div class="inspector-grid">
+                        <div class="inspector-item">
+                            <label>Selected Bone</label>
+                            <input type="text" id="bone-inspect-name" placeholder="No bone selected" readonly>
+                        </div>
+                        <div class="inspector-item">
+                            <label for="bone-inspect-parent">Parent Bone</label>
+                            <select id="bone-inspect-parent">
+                                <option value="">-- None (Root) --</option>
+                            </select>
+                        </div>
+                        <div class="inspector-row">
+                            <div class="inspector-item">
+                                <label>Pivot X (px)</label>
+                                <input type="number" id="bone-inspect-px" value="0">
+                            </div>
+                            <div class="inspector-item">
+                                <label>Pivot Y (px)</label>
+                                <input type="number" id="bone-inspect-py" value="0">
+                            </div>
+                        </div>
+                        <div class="inspector-row">
+                            <div class="inspector-item">
+                                <label>Anchor X (px)</label>
+                                <input type="number" id="bone-inspect-ax" value="0">
+                            </div>
+                            <div class="inspector-item">
+                                <label>Anchor Y (px)</label>
+                                <input type="number" id="bone-inspect-ay" value="0">
+                            </div>
+                        </div>
+                        <div class="inspector-item">
+                            <label>Base Angle (deg)</label>
+                            <input type="range" id="bone-inspect-angle-slider" min="-180" max="180" value="0" style="width: 100%;">
+                            <input type="number" id="bone-inspect-angle" value="0">
+                        </div>
+                        <div class="inspector-item">
+                            <label>Attached Sprite</label>
+                            <select id="bone-inspect-sprite">
+                                <option value="">-- None --</option>
+                            </select>
+                        </div>
+                        <div class="inspector-item">
+                            <label>Draw Z-Index</label>
+                            <input type="number" id="bone-inspect-z" value="10">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Face Zone Details -->
+                <div class="sidebar-section">
+                    <h3>Face Zone Configuration</h3>
+                    <div class="inspector-grid">
+                        <div class="inspector-row">
+                            <div class="inspector-item">
+                                <label>Eyes Offset X</label>
+                                <input type="number" id="face-inspect-ex" value="0">
+                            </div>
+                            <div class="inspector-item">
+                                <label>Eyes Offset Y</label>
+                                <input type="number" id="face-inspect-ey" value="0">
+                            </div>
+                        </div>
+                        <div class="inspector-row">
+                            <div class="inspector-item">
+                                <label>Mouth Offset X</label>
+                                <input type="number" id="face-inspect-mx" value="0">
+                            </div>
+                            <div class="inspector-item">
+                                <label>Mouth Offset Y</label>
+                                <input type="number" id="face-inspect-my" value="0">
+                            </div>
+                        </div>
+                        <div class="inspector-item">
+                            <label>Active Eyes Asset</label>
+                            <select id="face-inspect-eyes-sprite">
+                                <option value="">-- Default --</option>
+                            </select>
+                        </div>
+                        <div class="inspector-item">
+                            <label>Active Mouth Asset</label>
+                            <select id="face-inspect-mouth-sprite">
+                                <option value="">-- Default --</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Action Presets -->
+                <div class="sidebar-section">
+                    <h3>Preset Animation Loops</h3>
+                    <div class="preset-grid">
+                        <button type="button" class="preset-btn" data-preset="walk_right">Walk Right</button>
+                        <button type="button" class="preset-btn" data-preset="walk_left">Walk Left</button>
+                        <button type="button" class="preset-btn" data-preset="walk_front">Walk Front</button>
+                        <button type="button" class="preset-btn" data-preset="walk_back">Walk Back</button>
+                        <button type="button" class="preset-btn" data-preset="run_right">Run Right</button>
+                        <button type="button" class="preset-btn" data-preset="run_left">Run Left</button>
+                        <button type="button" class="preset-btn" data-preset="punch_right">Punch Right</button>
+                        <button type="button" class="preset-btn" data-preset="punch_left">Punch Left</button>
+                        <button type="button" class="preset-btn" data-preset="sit_right">Sit Right</button>
+                        <button type="button" class="preset-btn" data-preset="stand_right">Stand Right</button>
+                        <button type="button" class="preset-btn" data-preset="swim_right">Swim Right</button>
+                    </div>
+                </div>
+            </aside>
+        </div>
+        
+        <!-- Bottom Timeline Player -->
+        <footer class="animator-timeline">
+            <div class="timeline-toolbar">
+                <div class="timeline-player-controls">
+                    <button type="button" id="btn-timeline-play" class="btn btn-secondary btn-sm">▶ Play</button>
+                    <button type="button" id="btn-timeline-pause" class="btn btn-secondary btn-sm hidden">⏸ Pause</button>
+                    <button type="button" id="btn-timeline-stop" class="btn btn-secondary btn-sm">⏹ Stop</button>
+                    <span id="timeline-frame-display" style="font-size: 0.85rem; font-weight: 600; margin-left: 0.5rem; color: #f8fafc;">Frame: 0 / 20</span>
+                </div>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <button type="button" id="btn-insert-keyframe" class="btn btn-primary btn-xs">♦ Insert Keyframe</button>
+                    <button type="button" id="btn-delete-keyframe" class="btn btn-danger btn-xs">Remove Keyframe</button>
+                </div>
+            </div>
+            <div class="timeline-track-container">
+                <input type="range" id="timeline-slider-el" class="timeline-slider" min="0" max="20" value="0">
+            </div>
+            <div class="timeline-ticks" id="timeline-ticks-display">
+                <!-- Ticks rendered dynamically -->
+            </div>
+        </footer>
+    </div>
+
+    <script type="module" src="/frontend/js/skeletal_editor.js"></script>
     <script type="module" src="/frontend/js/app_main.js"></script>
 </body>
 </html>

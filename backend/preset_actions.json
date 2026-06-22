@@ -1,0 +1,314 @@
+{
+  "walk_right": {
+    "length": 20,
+    "bones": {
+      "hip": [
+        {"frame": 0, "tx": 0, "ty": 0, "sx": 1.0, "sy": 1.0, "angle": 0},
+        {"frame": 5, "tx": 0, "ty": -4, "sx": 1.0, "sy": 1.0, "angle": 0},
+        {"frame": 10, "tx": 0, "ty": 0, "sx": 1.0, "sy": 1.0, "angle": 0},
+        {"frame": 15, "tx": 0, "ty": -4, "sx": 1.0, "sy": 1.0, "angle": 0},
+        {"frame": 20, "tx": 0, "ty": 0, "sx": 1.0, "sy": 1.0, "angle": 0}
+      ],
+      "torso": [
+        {"frame": 0, "angle": 2},
+        {"frame": 10, "angle": -2},
+        {"frame": 20, "angle": 2}
+      ],
+      "left_thigh": [
+        {"frame": 0, "angle": -20},
+        {"frame": 5, "angle": 0},
+        {"frame": 10, "angle": 20},
+        {"frame": 15, "angle": 0},
+        {"frame": 20, "angle": -20}
+      ],
+      "right_thigh": [
+        {"frame": 0, "angle": 20},
+        {"frame": 5, "angle": 0},
+        {"frame": 10, "angle": -20},
+        {"frame": 15, "angle": 0},
+        {"frame": 20, "angle": 20}
+      ],
+      "left_calf": [
+        {"frame": 0, "angle": 10},
+        {"frame": 5, "angle": 25},
+        {"frame": 10, "angle": 5},
+        {"frame": 15, "angle": 0},
+        {"frame": 20, "angle": 10}
+      ],
+      "right_calf": [
+        {"frame": 0, "angle": 5},
+        {"frame": 5, "angle": 0},
+        {"frame": 10, "angle": 10},
+        {"frame": 15, "angle": 25},
+        {"frame": 20, "angle": 5}
+      ],
+      "left_shoulder": [
+        {"frame": 0, "angle": 15},
+        {"frame": 10, "angle": -15},
+        {"frame": 20, "angle": 15}
+      ],
+      "right_shoulder": [
+        {"frame": 0, "angle": -15},
+        {"frame": 10, "angle": 15},
+        {"frame": 20, "angle": -15}
+      ]
+    }
+  },
+  "walk_left": {
+    "length": 20,
+    "bones": {
+      "hip": [
+        {"frame": 0, "tx": 0, "ty": 0, "sx": -1.0, "sy": 1.0, "angle": 0},
+        {"frame": 5, "tx": 0, "ty": -4, "sx": -1.0, "sy": 1.0, "angle": 0},
+        {"frame": 10, "tx": 0, "ty": 0, "sx": -1.0, "sy": 1.0, "angle": 0},
+        {"frame": 15, "tx": 0, "ty": -4, "sx": -1.0, "sy": 1.0, "angle": 0},
+        {"frame": 20, "tx": 0, "ty": 0, "sx": -1.0, "sy": 1.0, "angle": 0}
+      ],
+      "torso": [
+        {"frame": 0, "angle": -2},
+        {"frame": 10, "angle": 2},
+        {"frame": 20, "angle": -2}
+      ],
+      "left_thigh": [
+        {"frame": 0, "angle": -20},
+        {"frame": 5, "angle": 0},
+        {"frame": 10, "angle": 20},
+        {"frame": 15, "angle": 0},
+        {"frame": 20, "angle": -20}
+      ],
+      "right_thigh": [
+        {"frame": 0, "angle": 20},
+        {"frame": 5, "angle": 0},
+        {"frame": 10, "angle": -20},
+        {"frame": 15, "angle": 0},
+        {"frame": 20, "angle": 20}
+      ],
+      "left_calf": [
+        {"frame": 0, "angle": 10},
+        {"frame": 5, "angle": 25},
+        {"frame": 10, "angle": 5},
+        {"frame": 15, "angle": 0},
+        {"frame": 20, "angle": 10}
+      ],
+      "right_calf": [
+        {"frame": 0, "angle": 5},
+        {"frame": 5, "angle": 0},
+        {"frame": 10, "angle": 10},
+        {"frame": 15, "angle": 25},
+        {"frame": 20, "angle": 5}
+      ],
+      "left_shoulder": [
+        {"frame": 0, "angle": 15},
+        {"frame": 10, "angle": -15},
+        {"frame": 20, "angle": 15}
+      ],
+      "right_shoulder": [
+        {"frame": 0, "angle": -15},
+        {"frame": 10, "angle": 15},
+        {"frame": 20, "angle": -15}
+      ]
+    }
+  },
+  "walk_front": {
+    "length": 20,
+    "bones": {
+      "hip": [
+        {"frame": 0, "ty": 0},
+        {"frame": 5, "ty": -6},
+        {"frame": 10, "ty": 0},
+        {"frame": 15, "ty": -6},
+        {"frame": 20, "ty": 0}
+      ],
+      "left_thigh": [
+        {"frame": 0, "angle": -5, "ty": 0},
+        {"frame": 10, "angle": 5, "ty": -10},
+        {"frame": 20, "angle": -5, "ty": 0}
+      ],
+      "right_thigh": [
+        {"frame": 0, "angle": 5, "ty": -10},
+        {"frame": 10, "angle": -5, "ty": 0},
+        {"frame": 20, "angle": 5, "ty": -10}
+      ],
+      "left_shoulder": [
+        {"frame": 0, "angle": -10},
+        {"frame": 10, "angle": 10},
+        {"frame": 20, "angle": -10}
+      ],
+      "right_shoulder": [
+        {"frame": 0, "angle": 10},
+        {"frame": 10, "angle": -10},
+        {"frame": 20, "angle": 10}
+      ]
+    }
+  },
+  "walk_back": {
+    "length": 20,
+    "bones": {
+      "hip": [
+        {"frame": 0, "ty": 0},
+        {"frame": 5, "ty": -6},
+        {"frame": 10, "ty": 0},
+        {"frame": 15, "ty": -6},
+        {"frame": 20, "ty": 0}
+      ],
+      "left_thigh": [
+        {"frame": 0, "angle": 5, "ty": -5},
+        {"frame": 10, "angle": -5, "ty": 0},
+        {"frame": 20, "angle": 5, "ty": -5}
+      ],
+      "right_thigh": [
+        {"frame": 0, "angle": -5, "ty": 0},
+        {"frame": 10, "angle": 5, "ty": -5},
+        {"frame": 20, "angle": -5, "ty": 0}
+      ]
+    }
+  },
+  "run_right": {
+    "length": 16,
+    "bones": {
+      "hip": [
+        {"frame": 0, "tx": 0, "ty": -10, "angle": 10},
+        {"frame": 4, "tx": 0, "ty": 0, "angle": 10},
+        {"frame": 8, "tx": 0, "ty": -10, "angle": 10},
+        {"frame": 12, "tx": 0, "ty": 0, "angle": 10},
+        {"frame": 16, "tx": 0, "ty": -10, "angle": 10}
+      ],
+      "torso": [
+        {"frame": 0, "angle": 15},
+        {"frame": 8, "angle": 10},
+        {"frame": 16, "angle": 15}
+      ],
+      "left_thigh": [
+        {"frame": 0, "angle": -45},
+        {"frame": 8, "angle": 45},
+        {"frame": 16, "angle": -45}
+      ],
+      "right_thigh": [
+        {"frame": 0, "angle": 45},
+        {"frame": 8, "angle": -45},
+        {"frame": 16, "angle": 45}
+      ],
+      "left_calf": [
+        {"frame": 0, "angle": 30},
+        {"frame": 4, "angle": 60},
+        {"frame": 8, "angle": 15},
+        {"frame": 12, "angle": 5},
+        {"frame": 16, "angle": 30}
+      ],
+      "right_calf": [
+        {"frame": 0, "angle": 15},
+        {"frame": 4, "angle": 5},
+        {"frame": 8, "angle": 30},
+        {"frame": 12, "angle": 60},
+        {"frame": 16, "angle": 15}
+      ]
+    }
+  },
+  "run_left": {
+    "length": 16,
+    "bones": {
+      "hip": [
+        {"frame": 0, "tx": 0, "ty": -10, "sx": -1.0, "angle": -10},
+        {"frame": 4, "tx": 0, "ty": 0, "sx": -1.0, "angle": -10},
+        {"frame": 8, "tx": 0, "ty": -10, "sx": -1.0, "angle": -10},
+        {"frame": 12, "tx": 0, "ty": 0, "sx": -1.0, "angle": -10},
+        {"frame": 16, "tx": 0, "ty": -10, "sx": -1.0, "angle": -10}
+      ],
+      "torso": [
+        {"frame": 0, "angle": -15},
+        {"frame": 8, "angle": -10},
+        {"frame": 16, "angle": -15}
+      ],
+      "left_thigh": [
+        {"frame": 0, "angle": -45},
+        {"frame": 8, "angle": 45},
+        {"frame": 16, "angle": -45}
+      ],
+      "right_thigh": [
+        {"frame": 0, "angle": 45},
+        {"frame": 8, "angle": -45},
+        {"frame": 16, "angle": 45}
+      ]
+    }
+  },
+  "punch_right": {
+    "length": 10,
+    "bones": {
+      "torso": [
+        {"frame": 0, "angle": 0},
+        {"frame": 3, "angle": 10},
+        {"frame": 5, "angle": -15},
+        {"frame": 10, "angle": 0}
+      ],
+      "right_shoulder": [
+        {"frame": 0, "angle": 0},
+        {"frame": 3, "angle": -30},
+        {"frame": 5, "angle": 90},
+        {"frame": 10, "angle": 0}
+      ],
+      "right_arm": [
+        {"frame": 0, "angle": 0},
+        {"frame": 3, "angle": 45},
+        {"frame": 5, "angle": 0},
+        {"frame": 10, "angle": 0}
+      ]
+    }
+  },
+  "punch_left": {
+    "length": 10,
+    "bones": {
+      "torso": [
+        {"frame": 0, "angle": 0},
+        {"frame": 3, "angle": -10},
+        {"frame": 5, "angle": 15},
+        {"frame": 10, "angle": 0}
+      ],
+      "left_shoulder": [
+        {"frame": 0, "angle": 0},
+        {"frame": 3, "angle": 30},
+        {"frame": 5, "angle": -90},
+        {"frame": 10, "angle": 0}
+      ]
+    }
+  },
+  "sit_right": {
+    "length": 1,
+    "bones": {
+      "hip": [{"frame": 0, "ty": 40}],
+      "left_thigh": [{"frame": 0, "angle": 75}],
+      "right_thigh": [{"frame": 0, "angle": 75}],
+      "left_calf": [{"frame": 0, "angle": 80}],
+      "right_calf": [{"frame": 0, "angle": 80}]
+    }
+  },
+  "stand_right": {
+    "length": 1,
+    "bones": {
+      "hip": [{"frame": 0, "ty": 0}],
+      "left_thigh": [{"frame": 0, "angle": 0}],
+      "right_thigh": [{"frame": 0, "angle": 0}],
+      "left_calf": [{"frame": 0, "angle": 0}],
+      "right_calf": [{"frame": 0, "angle": 0}]
+    }
+  },
+  "swim_right": {
+    "length": 24,
+    "bones": {
+      "hip": [
+        {"frame": 0, "angle": -75, "ty": 50},
+        {"frame": 12, "angle": -70, "ty": 45},
+        {"frame": 24, "angle": -75, "ty": 50}
+      ],
+      "left_thigh": [
+        {"frame": 0, "angle": -20},
+        {"frame": 12, "angle": 30},
+        {"frame": 24, "angle": -20}
+      ],
+      "right_thigh": [
+        {"frame": 0, "angle": 30},
+        {"frame": 12, "angle": -20},
+        {"frame": 24, "angle": 30}
+      ]
+    }
+  }
+}
