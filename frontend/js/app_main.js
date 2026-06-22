@@ -76,6 +76,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const selectVoiceModel = document.getElementById("setting-voice-model");
     const btnPreviewVoice = document.getElementById("btn-preview-voice");
     const settingCpuThreads = document.getElementById("setting-cpu-threads");
+    const settingVieneuSubprocessBatchSize = document.getElementById("setting-vieneu-subprocess-batch-size");
+    const settingVieneuDynamicBatching = document.getElementById("setting-vieneu-dynamic-batching");
+    const settingResourceGuardRamLimit = document.getElementById("setting-resource-guard-ram-limit");
+    const settingDockerCpus = document.getElementById("setting-docker-cpus");
+    const settingDockerMem = document.getElementById("setting-docker-mem");
     const settingRenderChunkSize = document.getElementById("setting-render-chunk-size");
     const settingVieneuVersion = document.getElementById("setting-vieneu-version");
     const settingVieneuBatch = document.getElementById("setting-vieneu-batch");
@@ -415,6 +420,21 @@ document.addEventListener("DOMContentLoaded", () => {
             if (settingCpuThreads) {
                 settingCpuThreads.value = data.cpu_threads || 0;
             }
+            if (settingVieneuSubprocessBatchSize) {
+                settingVieneuSubprocessBatchSize.value = data.vieneu_subprocess_batch_size || 12;
+            }
+            if (settingVieneuDynamicBatching) {
+                settingVieneuDynamicBatching.checked = data.vieneu_dynamic_batching === true;
+            }
+            if (settingResourceGuardRamLimit) {
+                settingResourceGuardRamLimit.value = data.resource_guard_ram_limit_mb || 1500;
+            }
+            if (settingDockerCpus) {
+                settingDockerCpus.value = data.docker_cpus || "10.0";
+            }
+            if (settingDockerMem) {
+                settingDockerMem.value = data.docker_mem || "8G";
+            }
             if (settingVieneuVersion) {
                 settingVieneuVersion.value = data.vieneu_version || "v3";
             }
@@ -443,6 +463,16 @@ document.addEventListener("DOMContentLoaded", () => {
             if (settingAsrLocalPath) settingAsrLocalPath.value = data.asr_local_model_path || "";
             if (settingXhsApiUrl) settingXhsApiUrl.value = data.xhs_downloader_api_url || "";
             if (settingWebgpuEnabled) settingWebgpuEnabled.checked = data.webgpu_enabled !== false;
+            if (data.webgpu_enabled !== false) {
+                probeWebGPU();
+            } else {
+                const badge = document.getElementById("webgpu-status-badge");
+                if (badge) {
+                    badge.textContent = "Disabled in settings";
+                    badge.style.color = "var(--text-color-muted)";
+                    badge.style.background = "rgba(255,255,255,0.05)";
+                }
+            }
             if (settingRenderChunkSize) settingRenderChunkSize.value = data.render_chunk_size || 50;
             
             // Load Job and Cache configs
@@ -473,6 +503,11 @@ document.addEventListener("DOMContentLoaded", () => {
             xai_api_keys: keyXai.value.split("\n").map(k => k.trim()).filter(k => k),
             ollama_urls: keyOllama.value.split("\n").map(k => k.trim()).filter(k => k),
             cpu_threads: settingCpuThreads ? (parseInt(settingCpuThreads.value, 10) || 0) : 0,
+            vieneu_subprocess_batch_size: settingVieneuSubprocessBatchSize ? (parseInt(settingVieneuSubprocessBatchSize.value, 10) || 12) : 12,
+            vieneu_dynamic_batching: settingVieneuDynamicBatching ? settingVieneuDynamicBatching.checked : false,
+            resource_guard_ram_limit_mb: settingResourceGuardRamLimit ? (parseInt(settingResourceGuardRamLimit.value, 10) || 1500) : 1500,
+            docker_cpus: settingDockerCpus ? settingDockerCpus.value.trim() : "10.0",
+            docker_mem: settingDockerMem ? settingDockerMem.value.trim() : "8G",
             vieneu_version: settingVieneuVersion ? settingVieneuVersion.value : "v3",
             vieneu_batch_paragraphs: settingVieneuBatch ? Math.min(Math.max(parseInt(settingVieneuBatch.value, 10) || 1, 1), 20) : 1,
             vieneu_mode: settingVieneuMode ? settingVieneuMode.value : "local",
@@ -2821,8 +2856,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // Trigger WebGPU probe on page load
-    probeWebGPU();
+    // WebGPU probe is dynamically triggered from loadConfig() depending on setting
 
     // Setup input listener for watermark opacity slider
     const settingWatermarkOpacity = document.getElementById("setting-watermark-opacity");

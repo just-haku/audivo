@@ -52,6 +52,9 @@ DEFAULT_CONFIG = {
     "xai_api_keys": [],
     "ollama_urls": ["http://localhost:11434"],
     "cpu_threads": 0,
+    "docker_cpus": "10.0",
+    "docker_mem": "8G",
+    "vieneu_dynamic_batching": False,
     "vieneu_version": "v2",
     "vieneu_mode": "local",
     "vieneu_api_base": "http://localhost:23333/v1",
@@ -177,6 +180,55 @@ def load_config() -> dict:
     except Exception:
         return DEFAULT_CONFIG
 
+def sync_env_file(config_data: dict):
+    env_path = os.path.join(BASE_DIR, ".env")
+    lines = []
+    existing_vars = {}
+    if os.path.exists(env_path):
+        try:
+            with open(env_path, "r", encoding="utf-8") as f:
+                lines = f.readlines()
+            for line in lines:
+                if "=" in line and not line.strip().startswith("#"):
+                    k, v = line.split("=", 1)
+                    existing_vars[k.strip()] = v.strip()
+        except Exception:
+            pass
+
+    # Update vars from config
+    docker_cpus = config_data.get("docker_cpus") or existing_vars.get("DOCKER_CPUS") or "10.0"
+    docker_mem = config_data.get("docker_mem") or existing_vars.get("DOCKER_MEM") or "8G"
+    
+    new_lines = []
+    has_cpus = False
+    has_mem = False
+    
+    for line in lines:
+        if "=" in line and not line.strip().startswith("#"):
+            k, _ = line.split("=", 1)
+            k_strip = k.strip()
+            if k_strip == "DOCKER_CPUS":
+                new_lines.append(f"DOCKER_CPUS={docker_cpus}\n")
+                has_cpus = True
+            elif k_strip == "DOCKER_MEM":
+                new_lines.append(f"DOCKER_MEM={docker_mem}\n")
+                has_mem = True
+            else:
+                new_lines.append(line)
+        else:
+            new_lines.append(line)
+            
+    if not has_cpus:
+        new_lines.append(f"DOCKER_CPUS={docker_cpus}\n")
+    if not has_mem:
+        new_lines.append(f"DOCKER_MEM={docker_mem}\n")
+
+    try:
+        with open(env_path, "w", encoding="utf-8") as f:
+            f.writelines(new_lines)
+    except Exception as e:
+        print(f"Error syncing .env file: {e}")
+
 def save_config(config_data: dict):
     """Saves settings back to config.json, merging with existing config to preserve manual edits."""
     try:
@@ -199,5 +251,7 @@ def save_config(config_data: dict):
 
         with open(CONFIG_PATH, "w", encoding="utf-8") as f:
             json.dump(merged, f, indent=4)
+            
+        sync_env_file(merged)
     except Exception as e:
         print(f"Error saving config.json: {e}")

@@ -596,9 +596,9 @@ def run_local_tts_subprocess(segments: list[dict[str, Any]], version: str, cpu_t
     config_batch_size = int(config.get("vieneu_subprocess_batch_size", 12) or 12)
     total_uncached = len(uncached_segments)
     
-    # Scale batch size dynamically if there are many segments, but cap it at 80 to prevent excessive memory accumulation
-    if total_uncached > 150:
-        sub_batch_size = max(config_batch_size, min(80, total_uncached // 15))
+    # Scale batch size dynamically if enabled and there are many segments, capping at 500 to prevent disk thrashing from frequent reloads while keeping memory bounded.
+    if config.get("vieneu_dynamic_batching", False) and total_uncached > 150:
+        sub_batch_size = max(config_batch_size, min(500, total_uncached // 4))
         add_log(f"[Optimization] Dynamically scaled VieNeu-TTS batch size to {sub_batch_size} (from config: {config_batch_size}) to reduce model loading overhead for {total_uncached} segments.")
     else:
         sub_batch_size = config_batch_size

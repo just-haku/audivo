@@ -643,6 +643,26 @@
                     </select>
                 </div>
                 <div class="setting-item">
+                    <label for="setting-vieneu-subprocess-batch-size">VieNeu-TTS Subprocess Batch Size</label>
+                    <input type="number" id="setting-vieneu-subprocess-batch-size" value="12" min="1" max="100" style="padding: 0.45rem 0.6rem; font-size: 0.8rem;">
+                </div>
+                <div class="setting-item checkbox-item" style="display: flex; flex-direction: row; align-items: center; gap: 0.5rem;">
+                    <input type="checkbox" id="setting-vieneu-dynamic-batching" style="width: auto;">
+                    <label for="setting-vieneu-dynamic-batching" style="cursor: pointer;">Enable Dynamic Batch Size Scaling</label>
+                </div>
+                <div class="setting-item">
+                    <label for="setting-resource-guard-ram-limit">Resource Guard RAM Limit (MB)</label>
+                    <input type="number" id="setting-resource-guard-ram-limit" value="1500" min="500" max="16000" step="100" style="padding: 0.45rem 0.6rem; font-size: 0.8rem;">
+                </div>
+                <div class="setting-item">
+                    <label for="setting-docker-cpus">Docker CPU Limit (Cores)</label>
+                    <input type="text" id="setting-docker-cpus" value="10.0" placeholder="e.g. 4.0 or 10.0" style="padding: 0.45rem 0.6rem; font-size: 0.8rem;">
+                </div>
+                <div class="setting-item">
+                    <label for="setting-docker-mem">Docker Memory Limit (RAM)</label>
+                    <input type="text" id="setting-docker-mem" value="8G" placeholder="e.g. 4G or 8G" style="padding: 0.45rem 0.6rem; font-size: 0.8rem;">
+                </div>
+                <div class="setting-item">
                     <label for="setting-render-chunk-size" id="lbl-render-chunk-size">Video rendering chunk size (sentences)</label>
                     <input type="number" id="setting-render-chunk-size" value="50" min="5" max="200" step="5" style="padding: 0.45rem 0.6rem; font-size: 0.8rem;">
                 </div>
