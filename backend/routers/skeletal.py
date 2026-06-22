@@ -7,7 +7,7 @@ from fastapi import APIRouter, HTTPException, UploadFile, File
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from backend.skeletal_db import SkeletalDB
-from backend.skeletal_solver import SkeletalSolver
+from backend.skeletal.renderer import SkeletalRenderer
 from backend.config import DOWNLOADS_DIR
 
 router = APIRouter(prefix="/api/skeletal", tags=["skeletal"])
@@ -115,7 +115,7 @@ def render_preview(req: PreviewRenderRequest):
     """Render a skeletal frame preview and return it as a streaming PNG image."""
     try:
         # Solve matrices and composite the frame in memory
-        img = SkeletalSolver.render_frame(
+        img = SkeletalRenderer.render_frame(
             bones=req.bones,
             pose_adjustments=req.pose_adjustments,
             uploads_dir=UPLOADS_DIR,
