@@ -34,6 +34,8 @@ class PreviewRenderRequest(BaseModel):
     bones: list[dict]
     pose_adjustments: dict
     draw_skeleton: bool = False
+    locked_bones: list[str] = None
+    locked_bone_coords: dict = None
 
 @router.get("/presets")
 def get_presets():
@@ -75,6 +77,55 @@ def delete_character(char_id: str):
     if not success:
         raise HTTPException(status_code=500, detail="Failed to delete character.")
     return {"status": "success"}
+
+class AssetSaveRequest(BaseModel):
+    category: str
+    subfolder: str = ""
+    filename: str
+    image_base64: str
+
+def walk_directory_tree(path: str) -> dict:
+    result = {"files": [], "folders": {}}
+    try:
+        for entry in os.scandir(path):
+            if entry.is_file():
+                if entry.name.lower().endswith((".png", ".jpg", ".jpeg", ".mp3", ".wav", ".json")):
+                    result["files"].append(entry.name)
+            elif entry.is_dir():
+                result["folders"][entry.name] = walk_directory_tree(entry.path)
+    except Exception:
+        pass
+    return result
+
+@router.get("/assets")
+def list_assets():
+    """List all assets categorized in folder directories."""
+    categories = ["body_parts", "character", "background", "sfx", "bgm", "fx"]
+    tree = {}
+    for cat in categories:
+        cat_dir = os.path.join(UPLOADS_DIR, cat)
+        os.makedirs(cat_dir, exist_ok=True)
+        tree[cat] = walk_directory_tree(cat_dir)
+    return tree
+
+@router.post("/save-asset")
+def save_asset(req: AssetSaveRequest):
+    """Save raw base64 drawing content to designated category directory."""
+    try:
+        category_dir = os.path.join(UPLOADS_DIR, req.category)
+        if req.subfolder:
+            category_dir = os.path.join(category_dir, os.path.basename(req.subfolder))
+        os.makedirs(category_dir, exist_ok=True)
+        
+        dest_path = os.path.join(category_dir, os.path.basename(req.filename))
+        img_data = base64.b64decode(req.image_base64.split(",")[-1])
+        with open(dest_path, "wb") as f:
+            f.write(img_data)
+            
+        rel_path = os.path.relpath(dest_path, UPLOADS_DIR)
+        return {"status": "success", "filepath": rel_path, "filename": os.path.basename(req.filename)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save asset: {e}")
 
 @router.post("/upload")
 async def upload_part(file: UploadFile = File(...)):
@@ -119,7 +170,9 @@ def render_preview(req: PreviewRenderRequest):
             bones=req.bones,
             pose_adjustments=req.pose_adjustments,
             uploads_dir=UPLOADS_DIR,
-            draw_skeleton=req.draw_skeleton
+            draw_skeleton=req.draw_skeleton,
+            locked_bones=req.locked_bones,
+            locked_bone_coords=req.locked_bone_coords
         )
         
         # Save Pillow Image into memory buffer

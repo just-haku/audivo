@@ -54,7 +54,7 @@ export function enforceConstraints(bone, angle) {
     return angle;
 }
 
-export function solveSkeletalHierarchy(bones, poseAdjustments, ikTargets = null, activePreset = null, currentFrame = 0, presetTimelines = {}) {
+export function solveSkeletalHierarchy(bones, poseAdjustments, ikTargets = null, activePreset = null, currentFrame = 0, presetTimelines = {}, lockedBones = new Set(), lockedBoneCoords = {}) {
     const solved = {};
     const solvedBones = {};
     
@@ -135,6 +135,11 @@ export function solveSkeletalHierarchy(bones, poseAdjustments, ikTargets = null,
             sx: p_sx * (bone.scale[0] * adj_sx),
             sy: p_sy * (bone.scale[1] * adj_sy)
         };
+        
+        if (lockedBones && lockedBones.has(name) && lockedBoneCoords && lockedBoneCoords[name]) {
+            solvedObj.x = lockedBoneCoords[name].x;
+            solvedObj.y = lockedBoneCoords[name].y;
+        }
         
         solvedBones[name] = solvedObj;
         return solvedObj;
@@ -253,3 +258,206 @@ export function solve2JointIK(bones, adjs, ikTargets, tempFK) {
         adjs[targetName].angle = enforceConstraints(bone_c, t2_local_deg);
     }
 }
+
+export function autoIdentifyFaceZone(bones, headWidth = 100, headHeight = 100) {
+    const faceMapping = {
+        "left_eyebrow": [-headWidth * 0.2, -headHeight * 0.3],
+        "right_eyebrow": [headWidth * 0.2, -headHeight * 0.3],
+        "left_eye": [-headWidth * 0.2, -headHeight * 0.15],
+        "right_eye": [headWidth * 0.2, -headHeight * 0.15],
+        "nose": [0, headHeight * 0.05],
+        "mouth_top": [0, headHeight * 0.22],
+        "mouth_bottom": [0, headHeight * 0.32]
+    };
+    
+    bones.forEach(bone => {
+        if (faceMapping[bone.name] && bone.parent === "head") {
+            bone.pivot = [...faceMapping[bone.name]];
+        }
+    });
+}
+
+export const SKELETON_PRESETS = {
+    human: [
+        { name: "hip", parent: null, pivot: [320, 360], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 10, attached_asset: null },
+        { name: "spine", parent: "hip", pivot: [0, -40], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 10, attached_asset: null },
+        { name: "chest", parent: "spine", pivot: [0, -40], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 10, attached_asset: null },
+        { name: "neck", parent: "chest", pivot: [0, -30], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 10, attached_asset: null },
+        { name: "head", parent: "neck", pivot: [0, -25], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 12, attached_asset: null, face_zone: { eyes_offset: [0, -20], mouth_offset: [0, 10] } },
+        
+        { name: "left_eyebrow", parent: "head", pivot: [-15, -30], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 13, attached_asset: null },
+        { name: "right_eyebrow", parent: "head", pivot: [15, -30], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 13, attached_asset: null },
+        { name: "left_eye", parent: "head", pivot: [-15, -20], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 13, attached_asset: null },
+        { name: "right_eye", parent: "head", pivot: [15, -20], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 13, attached_asset: null },
+        { name: "nose", parent: "head", pivot: [0, -5], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 13, attached_asset: null },
+        { name: "mouth_top", parent: "head", pivot: [0, 10], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 13, attached_asset: null },
+        { name: "mouth_bottom", parent: "head", pivot: [0, 20], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 13, attached_asset: null },
+
+        { name: "left_clavicle", parent: "chest", pivot: [-20, -10], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 9, attached_asset: null },
+        { name: "left_shoulder", parent: "left_clavicle", pivot: [-25, 0], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 9, attached_asset: null },
+        { name: "left_elbow", parent: "left_shoulder", pivot: [0, 45], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 8, attached_asset: null },
+        { name: "left_wrist", parent: "left_elbow", pivot: [0, 40], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 7, attached_asset: null },
+        { name: "left_hand", parent: "left_wrist", pivot: [0, 15], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 7, attached_asset: null },
+        
+        { name: "left_thumb_1", parent: "left_hand", pivot: [-10, 5], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 7 },
+        { name: "left_thumb_2", parent: "left_thumb_1", pivot: [-5, 10], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 7 },
+        { name: "left_thumb_3", parent: "left_thumb_2", pivot: [-3, 8], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 7 },
+
+        { name: "left_index_1", parent: "left_hand", pivot: [-5, 15], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 7 },
+        { name: "left_index_2", parent: "left_index_1", pivot: [0, 12], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 7 },
+        { name: "left_index_3", parent: "left_index_2", pivot: [0, 10], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 7 },
+
+        { name: "left_middle_1", parent: "left_hand", pivot: [0, 18], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 7 },
+        { name: "left_middle_2", parent: "left_middle_1", pivot: [0, 15], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 7 },
+        { name: "left_middle_3", parent: "left_middle_2", pivot: [0, 12], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 7 },
+
+        { name: "left_ring_1", parent: "left_hand", pivot: [5, 16], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 7 },
+        { name: "left_ring_2", parent: "left_ring_1", pivot: [0, 13], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 7 },
+        { name: "left_ring_3", parent: "left_ring_2", pivot: [0, 11], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 7 },
+
+        { name: "left_pinky_1", parent: "left_hand", pivot: [10, 13], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 7 },
+        { name: "left_pinky_2", parent: "left_pinky_1", pivot: [0, 10], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 7 },
+        { name: "left_pinky_3", parent: "left_pinky_2", pivot: [0, 8], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 7 },
+
+        { name: "right_clavicle", parent: "chest", pivot: [20, -10], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 13, attached_asset: null },
+        { name: "right_shoulder", parent: "right_clavicle", pivot: [25, 0], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 13, attached_asset: null },
+        { name: "right_elbow", parent: "right_shoulder", pivot: [0, 45], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 14, attached_asset: null },
+        { name: "right_wrist", parent: "right_elbow", pivot: [0, 40], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 15, attached_asset: null },
+        { name: "right_hand", parent: "right_wrist", pivot: [0, 15], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 15, attached_asset: null },
+        
+        { name: "right_thumb_1", parent: "right_hand", pivot: [10, 5], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 15 },
+        { name: "right_thumb_2", parent: "right_thumb_1", pivot: [5, 10], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 15 },
+        { name: "right_thumb_3", parent: "right_thumb_2", pivot: [3, 8], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 15 },
+
+        { name: "right_index_1", parent: "right_hand", pivot: [5, 15], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 15 },
+        { name: "right_index_2", parent: "right_index_1", pivot: [0, 12], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 15 },
+        { name: "right_index_3", parent: "right_index_2", pivot: [0, 10], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 15 },
+
+        { name: "right_middle_1", parent: "right_hand", pivot: [0, 18], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 15 },
+        { name: "right_middle_2", parent: "right_middle_1", pivot: [0, 15], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 15 },
+        { name: "right_middle_3", parent: "right_middle_2", pivot: [0, 12], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 15 },
+
+        { name: "right_ring_1", parent: "right_hand", pivot: [-5, 16], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 15 },
+        { name: "right_ring_2", parent: "right_ring_1", pivot: [0, 13], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 15 },
+        { name: "right_ring_3", parent: "right_ring_2", pivot: [0, 11], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 15 },
+
+        { name: "right_pinky_1", parent: "right_hand", pivot: [-10, 13], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 15 },
+        { name: "right_pinky_2", parent: "right_pinky_1", pivot: [0, 10], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 15 },
+        { name: "right_pinky_3", parent: "right_pinky_2", pivot: [0, 8], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 15 },
+
+        { name: "left_hip_joint", parent: "hip", pivot: [-25, 10], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 5, attached_asset: null },
+        { name: "left_thigh", parent: "left_hip_joint", pivot: [0, 45], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 5, attached_asset: null },
+        { name: "left_calf", parent: "left_thigh", pivot: [0, 40], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 4, attached_asset: null },
+        { name: "left_foot", parent: "left_calf", pivot: [0, 30], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 4, attached_asset: null },
+        { name: "left_toe", parent: "left_foot", pivot: [-15, 10], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 4, attached_asset: null },
+
+        { name: "right_hip_joint", parent: "hip", pivot: [25, 10], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 6, attached_asset: null },
+        { name: "right_thigh", parent: "right_hip_joint", pivot: [0, 45], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 6, attached_asset: null },
+        { name: "right_calf", parent: "right_thigh", pivot: [0, 40], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 6, attached_asset: null },
+        { name: "right_foot", parent: "right_calf", pivot: [0, 30], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 6, attached_asset: null },
+        { name: "right_toe", parent: "right_foot", pivot: [15, 10], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 6, attached_asset: null }
+    ],
+    dog: [
+        { name: "hip", parent: null, pivot: [260, 360], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 10 },
+        { name: "spine", parent: "hip", pivot: [60, 0], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 10 },
+        { name: "neck", parent: "spine", pivot: [40, -30], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 10 },
+        { name: "head", parent: "neck", pivot: [15, -25], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 11 },
+        { name: "jaw", parent: "head", pivot: [5, 15], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 11 },
+        { name: "tail_1", parent: "hip", pivot: [-15, -10], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 9 },
+        { name: "tail_2", parent: "tail_1", pivot: [-20, -15], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 9 },
+        { name: "tail_3", parent: "tail_2", pivot: [-15, -20], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 9 },
+        
+        { name: "l_front_shoulder", parent: "spine", pivot: [30, 15], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 8 },
+        { name: "l_front_knee", parent: "l_front_shoulder", pivot: [0, 30], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 8 },
+        { name: "l_front_paw", parent: "l_front_knee", pivot: [0, 25], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 8 },
+        
+        { name: "r_front_shoulder", parent: "spine", pivot: [30, 15], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 12 },
+        { name: "r_front_knee", parent: "r_front_shoulder", pivot: [0, 30], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 12 },
+        { name: "r_front_paw", parent: "r_front_knee", pivot: [0, 25], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 12 },
+
+        { name: "l_back_hip", parent: "hip", pivot: [-10, 15], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 7 },
+        { name: "l_back_knee", parent: "l_back_hip", pivot: [-10, 30], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 7 },
+        { name: "l_back_ankle", parent: "l_back_knee", pivot: [10, 25], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 7 },
+        { name: "l_back_paw", parent: "l_back_ankle", pivot: [0, 20], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 7 },
+
+        { name: "r_back_hip", parent: "hip", pivot: [-10, 15], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 13 },
+        { name: "r_back_knee", parent: "r_back_hip", pivot: [-10, 30], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 13 },
+        { name: "r_back_ankle", parent: "r_back_knee", pivot: [10, 25], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 13 },
+        { name: "r_back_paw", parent: "r_back_ankle", pivot: [0, 20], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 13 }
+    ],
+    cat: [
+        { name: "hip", parent: null, pivot: [260, 360], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 10 },
+        { name: "spine", parent: "hip", pivot: [55, 0], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 10 },
+        { name: "neck", parent: "spine", pivot: [35, -25], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 10 },
+        { name: "head", parent: "neck", pivot: [15, -20], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 11 },
+        { name: "tail_1", parent: "hip", pivot: [-15, -10], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 9 },
+        { name: "tail_2", parent: "tail_1", pivot: [-25, -10], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 9 },
+        { name: "tail_3", parent: "tail_2", pivot: [-20, -15], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 9 },
+        
+        { name: "l_front_shoulder", parent: "spine", pivot: [30, 12], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 8 },
+        { name: "l_front_knee", parent: "l_front_shoulder", pivot: [0, 25], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 8 },
+        { name: "l_front_paw", parent: "l_front_knee", pivot: [0, 20], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 8 },
+        
+        { name: "r_front_shoulder", parent: "spine", pivot: [30, 12], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 12 },
+        { name: "r_front_knee", parent: "r_front_shoulder", pivot: [0, 25], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 12 },
+        { name: "r_front_paw", parent: "r_front_knee", pivot: [0, 20], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 12 },
+
+        { name: "l_back_hip", parent: "hip", pivot: [-10, 12], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 7 },
+        { name: "l_back_knee", parent: "l_back_hip", pivot: [-8, 25], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 7 },
+        { name: "l_back_ankle", parent: "l_back_knee", pivot: [8, 22], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 7 },
+        { name: "l_back_paw", parent: "l_back_ankle", pivot: [0, 15], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 7 },
+
+        { name: "r_back_hip", parent: "hip", pivot: [-10, 12], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 13 },
+        { name: "r_back_knee", parent: "r_back_hip", pivot: [-8, 25], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 13 },
+        { name: "r_back_ankle", parent: "r_back_knee", pivot: [8, 22], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 13 },
+        { name: "r_back_paw", parent: "r_back_ankle", pivot: [0, 15], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 13 }
+    ],
+    chicken: [
+        { name: "hip", parent: null, pivot: [320, 360], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 10 },
+        { name: "spine", parent: "hip", pivot: [0, -30], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 10 },
+        { name: "neck", parent: "spine", pivot: [15, -30], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 10 },
+        { name: "head", parent: "neck", pivot: [10, -25], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 11 },
+        { name: "beak", parent: "head", pivot: [15, 0], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 11 },
+        
+        { name: "left_wing", parent: "spine", pivot: [-15, 5], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 5 },
+        { name: "right_wing", parent: "spine", pivot: [15, 5], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 15 },
+        
+        { name: "left_thigh", parent: "hip", pivot: [-15, 15], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 6 },
+        { name: "left_calf", parent: "left_thigh", pivot: [0, 30], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 6 },
+        { name: "left_foot", parent: "left_calf", pivot: [-10, 25], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 6 },
+        
+        { name: "right_thigh", parent: "hip", pivot: [15, 15], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 14 },
+        { name: "right_calf", parent: "right_thigh", pivot: [0, 30], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 14 },
+        { name: "right_foot", parent: "right_calf", pivot: [10, 25], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 14 }
+    ],
+    t_rex: [
+        { name: "hip", parent: null, pivot: [280, 380], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 10 },
+        { name: "spine", parent: "hip", pivot: [30, -40], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 10 },
+        { name: "neck", parent: "spine", pivot: [15, -45], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 10 },
+        { name: "head", parent: "neck", pivot: [25, -25], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 11 },
+        { name: "jaw", parent: "head", pivot: [10, 20], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 11 },
+        
+        { name: "tail_1", parent: "hip", pivot: [-35, 10], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 9 },
+        { name: "tail_2", parent: "tail_1", pivot: [-40, 15], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 9 },
+        { name: "tail_3", parent: "tail_2", pivot: [-35, 10], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 9 },
+        { name: "tail_4", parent: "tail_3", pivot: [-30, 5], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 9 },
+
+        { name: "left_upper_arm", parent: "spine", pivot: [15, 10], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 8 },
+        { name: "left_forearm", parent: "left_upper_arm", pivot: [12, 10], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 8 },
+        { name: "left_hand", parent: "left_forearm", pivot: [8, 5], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 8 },
+        
+        { name: "right_upper_arm", parent: "spine", pivot: [15, 10], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 13 },
+        { name: "right_forearm", parent: "right_upper_arm", pivot: [12, 10], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 13 },
+        { name: "right_hand", parent: "right_forearm", pivot: [8, 5], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 13 },
+
+        { name: "left_thigh", parent: "hip", pivot: [-20, 20], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 6 },
+        { name: "left_calf", parent: "left_thigh", pivot: [10, 50], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 6 },
+        { name: "left_foot", parent: "left_calf", pivot: [-10, 45], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 6 },
+        { name: "left_toe", parent: "left_foot", pivot: [25, 10], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 6 },
+
+        { name: "right_thigh", parent: "hip", pivot: [20, 20], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 14 },
+        { name: "right_calf", parent: "right_thigh", pivot: [10, 50], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 14 },
+        { name: "right_foot", parent: "right_calf", pivot: [-10, 45], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 14 },
+        { name: "right_toe", parent: "right_foot", pivot: [25, 10], anchor: [0, 0], angle: 0, scale: [1, 1], z_index: 14 }
+    ]
+};

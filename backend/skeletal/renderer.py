@@ -8,7 +8,7 @@ class SkeletalRenderer:
     @classmethod
     def render_frame(cls, bones: list[dict], pose_adjustments: dict, uploads_dir: str, 
                      canvas_size=(1024, 1024), bg_color=(0, 0, 0, 0), draw_skeleton=False, 
-                     ik_targets: dict = None) -> Image.Image:
+                     ik_targets: dict = None, locked_bones: list = None, locked_bone_coords: dict = None) -> Image.Image:
         """
         Renders the composite character frame.
         - bones: List of bone definitions.
@@ -19,8 +19,11 @@ class SkeletalRenderer:
         """
         canvas = Image.new("RGBA", canvas_size, bg_color)
         
-        # Solve matrices (applies IK solving if ik_targets are provided)
-        matrices = SkeletalSolver.solve_bone_matrices(bones, pose_adjustments, ik_targets)
+        # Solve matrices (applies IK solving and Lock coordinate constraints)
+        matrices = SkeletalSolver.solve_bone_matrices(
+            bones, pose_adjustments, ik_targets,
+            locked_bones=locked_bones, locked_bone_coords=locked_bone_coords
+        )
         
         # Sort bones by z_index
         sorted_bones = sorted(bones, key=lambda x: x.get("z_index", 0))

@@ -17,7 +17,8 @@ class SkeletalSolver:
         return total_local_angle
 
     @classmethod
-    def solve_bone_matrices(cls, bones: list[dict], pose_adjustments: dict, ik_targets: dict = None) -> dict[str, np.ndarray]:
+    def solve_bone_matrices(cls, bones: list[dict], pose_adjustments: dict, ik_targets: dict = None,
+                            locked_bones: list = None, locked_bone_coords: dict = None) -> dict[str, np.ndarray]:
         """
         Solve global matrices for all bones in the hierarchy.
         - bones: List of bone definitions.
@@ -72,6 +73,11 @@ class SkeletalSolver:
                 m_global = get_global_matrix(parent) @ m_local
             else:
                 m_global = m_local
+                
+            # Apply Locked point coordinate constraint if active
+            if locked_bones and name in locked_bones and locked_bone_coords and name in locked_bone_coords:
+                m_global[0, 2] = locked_bone_coords[name].get("x", m_global[0, 2])
+                m_global[1, 2] = locked_bone_coords[name].get("y", m_global[1, 2])
                 
             matrices[name] = m_global
             return m_global

@@ -77,4 +77,12 @@ export class SkeletalTimelinePlayer {
             ticks.innerHTML += `<span>F${i}</span>`;
         }
     }
+
+    setFPS(val) {
+        this.fps = val;
+        if (this.isPlaying) {
+            this.pause();
+            this.start();
+        }
+    }
 }

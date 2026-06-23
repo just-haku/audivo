@@ -703,6 +703,16 @@ def run_local_tts_subprocess(segments: list[dict[str, Any]], version: str, cpu_t
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         list(executor.map(process_batch, batch_infos))
 
+    # Verify synthesized files and create placeholders for failed ones
+    for seg in segments:
+        out_path = seg.get("output_path")
+        if out_path:
+            text = seg.get("text", "")
+            ext = "wav" if out_path.endswith(".wav") else "mp3"
+            if not verify_audio_volume(out_path):
+                add_log(f"[TTS Verification] Audio volume check failed for {out_path}. Generating silent placeholder.")
+                generate_silent_placeholder(out_path, text, ext)
+
 
 def synthesize_google_tts(client, text: str, voice_name: str, rate: float, ssml_capable: bool, output_path: str):
     from google.api_core.exceptions import GoogleAPICallError
@@ -749,6 +759,45 @@ def synthesize_google_tts(client, text: str, voice_name: str, rate: float, ssml_
     raise RuntimeError("Failed to synthesize text via Google Cloud TTS")
 
 
+def verify_audio_volume(file_path: str) -> bool:
+    if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
+        return False
+    try:
+        from pydub import AudioSegment
+        audio = AudioSegment.from_file(file_path)
+        if len(audio) < 50:  # less than 50ms is speech synthesis failure
+            return False
+        # check RMS (root mean square) or max amplitude
+        if audio.rms < 5 or audio.max == 0:
+            return False
+        return True
+    except Exception:
+        return False
+
+
+def generate_silent_placeholder(file_path: str, text: str, ext: str = "wav"):
+    try:
+        from pydub import AudioSegment
+        text_len = len(text or "")
+        # average speaking speed: ~15 chars/sec, min 1.0s, max 30.0s
+        duration_sec = max(1.0, min(30.0, float(text_len) * 0.07))
+        duration_ms = int(duration_sec * 1000)
+        silent_audio = AudioSegment.silent(duration=duration_ms)
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        fmt = "wav" if ext.lower() == "wav" else "mp3"
+        silent_audio.export(file_path, format=fmt)
+        return True
+    except Exception as e:
+        print(f"Failed to generate silent placeholder for {file_path}: {e}")
+        # fallback to empty file if pydub fails
+        try:
+            with open(file_path, "wb") as f:
+                f.write(b"")
+        except Exception:
+            pass
+        return False
+
+
 def synthesize_segment(client, segment: dict[str, Any], cache_dir: str) -> str:
     try:
         from backend.config import load_config
@@ -763,34 +812,53 @@ def synthesize_segment(client, segment: dict[str, Any], cache_dir: str) -> str:
     provider = get_voice_provider(voice_name)
     text = prepare_segment_text(segment, config)
     output_path = get_cached_output_path(segment, cache_dir, config)
+    ext = "wav" if provider == "vieneu" else "mp3"
 
     os.makedirs(cache_dir, exist_ok=True)
     if os.path.exists(output_path) and os.path.getsize(output_path) > 0:
-        return output_path
+        if verify_audio_volume(output_path):
+            return output_path
+        else:
+            try:
+                os.remove(output_path)
+            except Exception:
+                pass
 
-    if provider == "vieneu":
-        run_local_tts_subprocess(
-            [{"text": text, "voice_name": voice_name, "rate": rate, "output_path": output_path}],
-            version=config.get("vieneu_version", "v3"),
-            cpu_threads=int(config.get("cpu_threads", 0) or 0),
-            cache_dir=cache_dir,
-        )
-        return output_path
+    for attempt in range(3):
+        try:
+            if provider == "vieneu":
+                run_local_tts_subprocess(
+                    [{"text": text, "voice_name": voice_name, "rate": rate, "output_path": output_path}],
+                    version=config.get("vieneu_version", "v3"),
+                    cpu_threads=int(config.get("cpu_threads", 0) or 0),
+                    cache_dir=cache_dir,
+                )
+            elif provider == "fish":
+                audio_bytes = synthesize_fish_speech(text, voice_name, rate, config)
+                with open(output_path, "wb") as f:
+                    f.write(audio_bytes)
+            elif provider == "omnivoice":
+                audio_bytes = synthesize_omnivoice_api(text, voice_name, rate, config)
+                with open(output_path, "wb") as f:
+                    f.write(audio_bytes)
+            elif provider == "generic":
+                audio_bytes = synthesize_generic_tts(text, voice_name, rate, config)
+                with open(output_path, "wb") as f:
+                    f.write(audio_bytes)
+            else:
+                if client is None:
+                    raise RuntimeError("Google Cloud TTS client is not initialized.")
+                synthesize_google_tts(client, text, voice_name, rate, ssml_capable, output_path)
 
-    if provider == "fish":
-        audio_bytes = synthesize_fish_speech(text, voice_name, rate, config)
-    elif provider == "omnivoice":
-        audio_bytes = synthesize_omnivoice_api(text, voice_name, rate, config)
-    elif provider == "generic":
-        audio_bytes = synthesize_generic_tts(text, voice_name, rate, config)
-    else:
-        if client is None:
-            raise RuntimeError("Google Cloud TTS client is not initialized.")
-        synthesize_google_tts(client, text, voice_name, rate, ssml_capable, output_path)
-        return output_path
+            if verify_audio_volume(output_path):
+                return output_path
+        except Exception as e:
+            print(f"TTS synthesis attempt {attempt + 1} failed for {output_path}: {e}")
+            time.sleep(1.0)
 
-    with open(output_path, "wb") as f:
-        f.write(audio_bytes)
+    # Fallback to silent placeholder if all attempts fail
+    print(f"TTS synthesis failed for all attempts. Creating silent placeholder for {output_path}")
+    generate_silent_placeholder(output_path, text, ext)
     return output_path
 
 

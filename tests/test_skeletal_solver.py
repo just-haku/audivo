@@ -170,3 +170,52 @@ def test_solve_ik_angles():
     # So thigh angle adjustment should be 0.0, calf angle adjustment should be 90.0.
     assert pytest.approx(adjs_bent["thigh"]["angle"], abs=1e-4) == 0.0
     assert pytest.approx(adjs_bent["calf"]["angle"], abs=1e-4) == 90.0
+
+def test_locked_joints_solving():
+    bones = [
+        {"name": "root", "parent": None, "pivot": [100, 100], "angle": 0, "scale": [1, 1]},
+        {"name": "arm", "parent": "root", "pivot": [50, 0], "angle": 90, "scale": [1, 1]}
+    ]
+    pose_adjs = {
+        "root": {"angle": 45, "tx": 10, "ty": 10, "sx": 1, "sy": 1},
+        "arm": {"angle": 0, "tx": 0, "ty": 0, "sx": 1, "sy": 1}
+    }
+    
+    # Solve without locks
+    matrices_no_lock = SkeletalSolver.solve_bone_matrices(bones, pose_adjs)
+    
+    # Solve with arm locked at coordinates [150, 100]
+    locked_bones = ["arm"]
+    locked_bone_coords = {"arm": {"x": 150.0, "y": 100.0}}
+    matrices_with_lock = SkeletalSolver.solve_bone_matrices(
+        bones, pose_adjs,
+        locked_bones=locked_bones,
+        locked_bone_coords=locked_bone_coords
+    )
+    
+    assert np.allclose(matrices_with_lock["arm"][:2, 2], np.array([150.0, 100.0]))
+    # Root position should still be solved normally
+    assert np.allclose(matrices_with_lock["root"][:2, 2], matrices_no_lock["root"][:2, 2])
+
+def test_verify_audio_volume_and_placeholder(tmp_path):
+    from backend.providers.tts import verify_audio_volume, generate_silent_placeholder
+    
+    # 1. Test non-existent file
+    assert not verify_audio_volume(str(tmp_path / "non_existent.wav"))
+    
+    # 2. Test empty file
+    empty_file = tmp_path / "empty.wav"
+    empty_file.touch()
+    assert not verify_audio_volume(str(empty_file))
+    
+    # 3. Test generate_silent_placeholder
+    placeholder_file = tmp_path / "placeholder.wav"
+    success = generate_silent_placeholder(str(placeholder_file), "hello world", ext="wav")
+    assert success
+    assert os.path.exists(placeholder_file)
+    assert os.path.getsize(placeholder_file) > 0
+    
+    # 4. Test verify_audio_volume on placeholder file (silent, so it should fail validation)
+    assert not verify_audio_volume(str(placeholder_file))
+
+
